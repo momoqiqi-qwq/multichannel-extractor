@@ -4,14 +4,14 @@ mod commands;
 mod directory_scan;
 mod models;
 mod system_tools;
-mod task_manifest;
 mod task_control;
+mod task_manifest;
 
 use commands::{
-    cancel_job, check_claude_cli, clear_background_image, delete_extraction, get_download_directory,
-    inspect_files, install_background_image, install_claude_dat, launch_claude_dat, open_output,
-    pause_job, preflight_jobs, read_text_file, resume_job, scan_archive_directory, start_batch,
-    startup_archive_paths, write_text_file, TaskRegistry,
+    cancel_job, check_claude_cli, clear_background_image, delete_extraction,
+    get_download_directory, inspect_files, install_background_image, install_claude_dat,
+    launch_claude_dat, open_output, pause_job, preflight_jobs, read_text_file, resume_job,
+    scan_archive_directory, start_batch, startup_archive_paths, write_text_file, TaskRegistry,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

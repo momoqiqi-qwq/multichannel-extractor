@@ -87,7 +87,6 @@ pub struct BatchFinishedEvent {
     pub cancelled: usize,
 }
 
-
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeleteExtractionResult {
@@ -95,8 +94,6 @@ pub struct DeleteExtractionResult {
     pub skipped_replaced_files: usize,
     pub deleted_directories: usize,
 }
-
-
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]

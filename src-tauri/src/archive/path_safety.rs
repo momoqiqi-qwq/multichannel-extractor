@@ -4,7 +4,10 @@ use std::fs;
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
-pub(super) fn ensure_no_symlink_path(destination: &Path, candidate: &Path) -> Result<(), ArchiveError> {
+pub(super) fn ensure_no_symlink_path(
+    destination: &Path,
+    candidate: &Path,
+) -> Result<(), ArchiveError> {
     if !candidate.starts_with(destination) {
         return Err(ArchiveError::InvalidPath(format!(
             "目标路径越过解压目录：{}",
@@ -38,10 +41,9 @@ pub(super) fn ensure_no_symlink_path(destination: &Path, candidate: &Path) -> Re
 
 fn check_not_symlink(path: &Path) -> Result<(), ArchiveError> {
     match fs::symlink_metadata(path) {
-        Ok(metadata) if metadata.file_type().is_symlink() => Err(ArchiveError::InvalidPath(format!(
-            "拒绝使用符号链接作为解压目录：{}",
-            path.display()
-        ))),
+        Ok(metadata) if metadata.file_type().is_symlink() => Err(ArchiveError::InvalidPath(
+            format!("拒绝使用符号链接作为解压目录：{}", path.display()),
+        )),
         Ok(_) => Ok(()),
         // 路径尚不存在时不可能是符号链接；解压目录会在写入阶段按需创建。
         Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),

@@ -40,7 +40,8 @@ pub(super) fn archive_folder_name(path: &Path) -> Result<OsString, ArchiveError>
         .to_string_lossy();
     let lower = name.to_ascii_lowercase();
     let suffixes = [
-        ".tar.gz", ".tar.bz2", ".tar.xz", ".tbz2", ".tbz", ".tgz", ".txz", ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz",
+        ".tar.gz", ".tar.bz2", ".tar.xz", ".tbz2", ".tbz", ".tgz", ".txz", ".zip", ".rar", ".7z",
+        ".tar", ".gz", ".bz2", ".xz",
     ];
     let mut stem = name.as_ref();
     for suffix in suffixes {
@@ -61,7 +62,11 @@ pub(super) fn archive_folder_name(path: &Path) -> Result<OsString, ArchiveError>
     let cleaned = cleaned
         .trim()
         .trim_end_matches(|character| character == '.' || character == ' ');
-    Ok(OsString::from(if cleaned.is_empty() { "extracted" } else { cleaned }))
+    Ok(OsString::from(if cleaned.is_empty() {
+        "extracted"
+    } else {
+        cleaned
+    }))
 }
 
 pub(super) fn detect_kind(path: &Path) -> Option<ArchiveKind> {
@@ -90,4 +95,3 @@ pub(super) fn detect_kind(path: &Path) -> Option<ArchiveKind> {
         None
     }
 }
-

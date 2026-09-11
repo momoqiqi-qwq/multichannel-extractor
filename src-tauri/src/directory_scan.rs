@@ -85,7 +85,8 @@ pub fn scan_archive_directory(
         });
     }
 
-    candidates.sort_by(|left, right| compare_candidates(left, right, request.prefer_highest_version));
+    candidates
+        .sort_by(|left, right| compare_candidates(left, right, request.prefer_highest_version));
     let selected = candidates.first();
     let selected_path = selected.map(|item| item.path.clone());
     let selected_name = selected.map(|item| item.name.clone());
@@ -159,8 +160,8 @@ fn is_prerelease(name_lower: &str) -> bool {
 fn archive_stem(name: &str) -> &str {
     let lower = name.to_lowercase();
     const EXTENSIONS: &[&str] = &[
-        ".tar.gz", ".tar.bz2", ".tar.xz", ".tbz2", ".tbz", ".tgz", ".txz", ".zip",
-        ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz",
+        ".tar.gz", ".tar.bz2", ".tar.xz", ".tbz2", ".tbz", ".tgz", ".txz", ".zip", ".rar", ".7z",
+        ".tar", ".gz", ".bz2", ".xz",
     ];
     for extension in EXTENSIONS {
         if lower.ends_with(extension) {
@@ -180,7 +181,11 @@ fn extract_version(name: &str) -> (Option<String>, Vec<u64>) {
     }
 
     let start_index = preferred_version_start(&lower_chars)
-        .and_then(|start| ranges.iter().position(|(range_start, _)| *range_start >= start))
+        .and_then(|start| {
+            ranges
+                .iter()
+                .position(|(range_start, _)| *range_start >= start)
+        })
         .unwrap_or_else(|| best_numeric_group_start(&lower_chars, &ranges));
     let parts = collect_numeric_group(&chars, &lower_chars, &ranges, start_index);
     if parts.is_empty() {
@@ -349,7 +354,10 @@ mod tests {
     #[test]
     fn extracts_semver_like_values() {
         assert_eq!(extract_version("project-v2.10.3.zip").1, vec![2, 10, 3]);
-        assert_eq!(extract_version("产品_版本_2026.07.1.7z").1, vec![2026, 7, 1]);
+        assert_eq!(
+            extract_version("产品_版本_2026.07.1.7z").1,
+            vec![2026, 7, 1]
+        );
         assert_eq!(extract_version("movie-1080p-v2.10.zip").1, vec![2, 10]);
         assert_eq!(extract_version("build-1080p-2.11.zip").1, vec![2, 11]);
     }

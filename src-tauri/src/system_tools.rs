@@ -19,7 +19,10 @@ fn existing_directory(value: &str) -> Result<PathBuf, String> {
     }
     let directory = PathBuf::from(trimmed);
     if !directory.is_dir() {
-        return Err(format!("Claude 工作目录不存在或不是文件夹：{}", directory.display()));
+        return Err(format!(
+            "Claude 工作目录不存在或不是文件夹：{}",
+            directory.display()
+        ));
     }
     directory
         .canonicalize()
@@ -52,7 +55,8 @@ pub fn install_claude_dat(directory: &str, overwrite: bool) -> Result<String, St
         "createdAtUnix": created_at_unix,
         "note": "由解压台生成。启动时固定使用 DAT 所在目录，不执行 DAT 中的自定义命令。"
     });
-    let bytes = serde_json::to_vec_pretty(&content).map_err(|error| format!("生成 DAT 内容失败：{error}"))?;
+    let bytes = serde_json::to_vec_pretty(&content)
+        .map_err(|error| format!("生成 DAT 内容失败：{error}"))?;
     fs::write(&target, bytes).map_err(|error| format!("写入 Claude DAT 失败：{error}"))?;
     Ok(target.to_string_lossy().to_string())
 }
@@ -64,9 +68,13 @@ fn resolve_claude_dat(directory: &str) -> Result<(PathBuf, PathBuf), String> {
         install_claude_dat(directory.to_string_lossy().as_ref(), true)?;
     }
     if !dat_path.is_file() {
-        return Err(format!("Claude DAT 不存在或不是文件：{}", dat_path.display()));
+        return Err(format!(
+            "Claude DAT 不存在或不是文件：{}",
+            dat_path.display()
+        ));
     }
-    let metadata = fs::metadata(&dat_path).map_err(|error| format!("无法读取 Claude DAT：{error}"))?;
+    let metadata =
+        fs::metadata(&dat_path).map_err(|error| format!("无法读取 Claude DAT：{error}"))?;
     if metadata.len() == 0 {
         return Err(format!("Claude DAT 为空：{}", dat_path.display()));
     }
@@ -134,7 +142,8 @@ pub fn install_background_image(app: &AppHandle, source: &str) -> Result<String,
     if !source.is_file() {
         return Err(format!("背景图片不存在：{}", source.display()));
     }
-    let metadata = fs::metadata(&source).map_err(|error| format!("无法读取背景图片信息：{error}"))?;
+    let metadata =
+        fs::metadata(&source).map_err(|error| format!("无法读取背景图片信息：{error}"))?;
     if metadata.len() > MAX_BACKGROUND_IMAGE_BYTES {
         return Err("背景图片不能超过 25 MB".to_string());
     }
@@ -173,7 +182,8 @@ pub fn install_background_image(app: &AppHandle, source: &str) -> Result<String,
 
 pub fn clear_background_image(app: &AppHandle) -> Result<(), String> {
     let directory = appearance_directory(app)?;
-    let entries = fs::read_dir(&directory).map_err(|error| format!("无法读取外观资源目录：{error}"))?;
+    let entries =
+        fs::read_dir(&directory).map_err(|error| format!("无法读取外观资源目录：{error}"))?;
     for entry in entries.flatten() {
         let path = entry.path();
         if path.is_file()

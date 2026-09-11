@@ -88,7 +88,8 @@ pub fn delete_from_manifest(
         return Err("拒绝读取应用数据目录之外的任务清单".to_string());
     }
 
-    let content = fs::read(&canonical_manifest).map_err(|error| format!("无法读取任务清单：{error}"))?;
+    let content =
+        fs::read(&canonical_manifest).map_err(|error| format!("无法读取任务清单：{error}"))?;
     let manifest: ExtractionManifest =
         serde_json::from_slice(&content).map_err(|error| format!("任务清单格式无效：{error}"))?;
     if manifest.schema_version != MANIFEST_SCHEMA_VERSION {
@@ -104,10 +105,13 @@ pub fn delete_from_manifest(
             deleted_directories: 0,
         });
     }
-    let root_metadata = fs::symlink_metadata(&output_root)
-        .map_err(|error| format!("无法检查输出目录：{error}"))?;
+    let root_metadata =
+        fs::symlink_metadata(&output_root).map_err(|error| format!("无法检查输出目录：{error}"))?;
     if root_metadata.file_type().is_symlink() || !root_metadata.is_dir() {
-        return Err(format!("输出根目录不是可信文件夹：{}", output_root.display()));
+        return Err(format!(
+            "输出根目录不是可信文件夹：{}",
+            output_root.display()
+        ));
     }
     let canonical_output_root = output_root
         .canonicalize()
@@ -124,12 +128,17 @@ pub fn delete_from_manifest(
             continue;
         }
         if path.is_file() || path.is_symlink() {
-            fs::remove_file(&path).map_err(|error| format!("删除 {} 失败：{error}", path.display()))?;
+            fs::remove_file(&path)
+                .map_err(|error| format!("删除 {} 失败：{error}", path.display()))?;
             deleted_files += 1;
         }
     }
 
-    let mut directories: Vec<PathBuf> = manifest.created_directories.iter().map(PathBuf::from).collect();
+    let mut directories: Vec<PathBuf> = manifest
+        .created_directories
+        .iter()
+        .map(PathBuf::from)
+        .collect();
     if manifest.output_root_created {
         directories.push(output_root.clone());
     }
@@ -162,7 +171,10 @@ fn validate_manifest_target(
     target: &Path,
 ) -> Result<(), String> {
     if !target.starts_with(output_root) {
-        return Err(format!("任务清单包含输出目录之外的路径：{}", target.display()));
+        return Err(format!(
+            "任务清单包含输出目录之外的路径：{}",
+            target.display()
+        ));
     }
     if target == output_root {
         return Ok(());
@@ -175,7 +187,10 @@ fn validate_manifest_target(
         .canonicalize()
         .map_err(|error| format!("无法校验 {} 的父目录：{error}", target.display()))?;
     if !canonical_parent.starts_with(canonical_output_root) {
-        return Err(format!("拒绝删除经符号链接指向输出目录之外的路径：{}", target.display()));
+        return Err(format!(
+            "拒绝删除经符号链接指向输出目录之外的路径：{}",
+            target.display()
+        ));
     }
     if target.is_symlink() {
         return Ok(());

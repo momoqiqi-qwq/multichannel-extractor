@@ -3,12 +3,12 @@ use super::collision::copy_with_policy;
 use super::error::ArchiveError;
 use super::path_safety::{ensure_no_symlink_path, is_junk_path, normal_components};
 use crate::models::{CollisionPolicy, DepthMode};
+use crate::task_control::TaskControl;
 use std::collections::HashSet;
 use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::io;
 use std::path::{Component, Path, PathBuf};
-use crate::task_control::TaskControl;
 use walkdir::WalkDir;
 
 #[derive(Debug, Clone, Default)]
@@ -17,7 +17,6 @@ pub(super) struct MaterializeReport {
     pub replaced_files: Vec<PathBuf>,
     pub created_directories: Vec<PathBuf>,
 }
-
 
 pub(super) fn materialize<F>(
     raw_dir: &Path,
@@ -67,7 +66,11 @@ where
         } else {
             "避免同名输出目录重复嵌套"
         };
-        progress(73, "arranging", format!("{reason}：{}", root.to_string_lossy()));
+        progress(
+            73,
+            "arranging",
+            format!("{reason}：{}", root.to_string_lossy()),
+        );
     }
 
     let mut report = MaterializeReport::default();
@@ -192,7 +195,8 @@ pub(super) fn should_strip_outer(
 }
 
 fn os_eq_ignore_ascii_case(left: &OsStr, right: &OsStr) -> bool {
-    left.to_string_lossy().eq_ignore_ascii_case(&right.to_string_lossy())
+    left.to_string_lossy()
+        .eq_ignore_ascii_case(&right.to_string_lossy())
 }
 
 pub(super) fn map_relative_path(
@@ -293,7 +297,10 @@ mod tests {
             None,
         );
 
-        assert_eq!(fs::read(output.join("root/assets/icons/icon.txt")).unwrap(), b"icon");
+        assert_eq!(
+            fs::read(output.join("root/assets/icons/icon.txt")).unwrap(),
+            b"icon"
+        );
         assert_eq!(report.written_files.len(), 1);
     }
 
@@ -313,7 +320,10 @@ mod tests {
             None,
         );
 
-        assert_eq!(fs::read(output.join("root/assets/icon.txt")).unwrap(), b"icon");
+        assert_eq!(
+            fs::read(output.join("root/assets/icon.txt")).unwrap(),
+            b"icon"
+        );
         assert!(!output.join("root/assets/icons/icon.txt").exists());
     }
 
@@ -394,8 +404,13 @@ mod tests {
 
     #[test]
     fn unsafe_archive_paths_are_rejected() {
-        assert!(super::super::path_safety::safe_archive_path(Path::new("../outside.txt")).is_none());
+        assert!(
+            super::super::path_safety::safe_archive_path(Path::new("../outside.txt")).is_none()
+        );
         assert!(super::super::path_safety::safe_archive_path(Path::new("/absolute.txt")).is_none());
-        assert_eq!(super::super::path_safety::safe_archive_path(Path::new("safe/file.txt")), Some(PathBuf::from("safe/file.txt")));
+        assert_eq!(
+            super::super::path_safety::safe_archive_path(Path::new("safe/file.txt")),
+            Some(PathBuf::from("safe/file.txt"))
+        );
     }
 }

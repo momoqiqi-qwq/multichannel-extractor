@@ -2,6 +2,7 @@ use super::check_cancel;
 use super::error::ArchiveError;
 use super::kind::ArchiveKind;
 use super::path_safety::safe_archive_path;
+use crate::task_control::TaskControl;
 use bzip2::read::BzDecoder;
 use flate2::read::GzDecoder;
 use std::ffi::{OsStr, OsString};
@@ -9,7 +10,6 @@ use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use crate::task_control::TaskControl;
 use tar::Archive;
 use xz2::read::XzDecoder;
 use zip::result::ZipError;
@@ -28,7 +28,9 @@ where
     let file = File::open(archive_path)?;
     let mut archive = ZipArchive::new(file).map_err(map_zip_error)?;
     let total = archive.len().max(1);
-    let password_bytes = password.filter(|value| !value.is_empty()).map(str::as_bytes);
+    let password_bytes = password
+        .filter(|value| !value.is_empty())
+        .map(str::as_bytes);
 
     for index in 0..archive.len() {
         check_cancel(cancel)?;
@@ -55,7 +57,11 @@ where
             file.flush()?;
         }
         let percent = 5 + (((index + 1) * 62 / total) as u8);
-        progress(percent.min(67), "extracting", format!("正在读取 ZIP 条目 {}/{}", index + 1, total));
+        progress(
+            percent.min(67),
+            "extracting",
+            format!("正在读取 ZIP 条目 {}/{}", index + 1, total),
+        );
     }
     Ok(())
 }
@@ -82,13 +88,16 @@ fn copy_with_control<R: Read, W: Write>(
 fn map_zip_error(error: ZipError) -> ArchiveError {
     match error {
         ZipError::InvalidPassword => ArchiveError::InvalidPassword,
-        ZipError::UnsupportedArchive(message) if message == ZipError::PASSWORD_REQUIRED => ArchiveError::PasswordRequired,
+        ZipError::UnsupportedArchive(message) if message == ZipError::PASSWORD_REQUIRED => {
+            ArchiveError::PasswordRequired
+        }
         other => ArchiveError::InvalidArchive(other.to_string()),
     }
 }
 
 fn is_zip_symlink(mode: Option<u32>) -> bool {
-    mode.map(|value| value & 0o170000 == 0o120000).unwrap_or(false)
+    mode.map(|value| value & 0o170000 == 0o120000)
+        .unwrap_or(false)
 }
 
 pub(super) fn extract_tar<F>(
@@ -197,7 +206,11 @@ fn stripped_stream_name(path: &Path, kind: ArchiveKind) -> Result<OsString, Arch
         _ => "",
     };
     let stripped = name.strip_suffix(suffix).unwrap_or(&name);
-    let fallback = if stripped.is_empty() { "decompressed" } else { stripped };
+    let fallback = if stripped.is_empty() {
+        "decompressed"
+    } else {
+        stripped
+    };
     Ok(OsString::from(fallback))
 }
 
@@ -354,4 +367,3 @@ fn run_external(mut command: Command) -> Result<(), ToolAttempt> {
         Err(error) => Err(ToolAttempt::Failed(error.to_string())),
     }
 }
-

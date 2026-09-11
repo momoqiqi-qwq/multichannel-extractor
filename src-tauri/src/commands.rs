@@ -1,14 +1,14 @@
 use crate::archive::{extract_job, inspect_path, planned_destination, ArchiveError};
+use crate::directory_scan;
 use crate::models::{
     ArchiveDirectoryScanRequest, ArchiveDirectoryScanResult, BatchFinishedEvent, ClaudeCliStatus,
     ClaudeLaunchResult, DeleteExtractionResult, ExtractionJob, InspectedFile, JobFinishedEvent,
     PreflightIssue, PreflightJobResult, PreflightRequest, PreflightResult, ProgressEvent,
     StartBatchRequest,
 };
+use crate::system_tools;
 use crate::task_control::TaskControl;
 use crate::task_manifest::{delete_from_manifest, write_manifest};
-use crate::directory_scan;
-use crate::system_tools;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -50,15 +50,23 @@ impl TaskRegistry {
     }
 
     fn pause(&self, job_id: &str) -> bool {
-        let Ok(tasks) = self.tasks.lock() else { return false; };
-        let Some(control) = tasks.get(job_id) else { return false; };
+        let Ok(tasks) = self.tasks.lock() else {
+            return false;
+        };
+        let Some(control) = tasks.get(job_id) else {
+            return false;
+        };
         control.pause();
         true
     }
 
     fn resume(&self, job_id: &str) -> bool {
-        let Ok(tasks) = self.tasks.lock() else { return false; };
-        let Some(control) = tasks.get(job_id) else { return false; };
+        let Ok(tasks) = self.tasks.lock() else {
+            return false;
+        };
+        let Some(control) = tasks.get(job_id) else {
+            return false;
+        };
         control.resume();
         true
     }
@@ -154,7 +162,17 @@ pub async fn start_batch(
                 let destination = match planned_destination(&job) {
                     Ok(path) => path,
                     Err(error) => {
-                        emit_finished(&app, &job, false, None, Some(error.to_string()), 0, None, 0, 0);
+                        emit_finished(
+                            &app,
+                            &job,
+                            false,
+                            None,
+                            Some(error.to_string()),
+                            0,
+                            None,
+                            0,
+                            0,
+                        );
                         registry.remove(&job.job_id);
                         return JobOutcome::Failed;
                     }
@@ -172,7 +190,17 @@ pub async fn start_batch(
                 {
                     Ok(Some(permit)) => permit,
                     Ok(None) => {
-                        emit_finished(&app, &job, false, None, Some("任务已取消".to_string()), 0, None, 0, 0);
+                        emit_finished(
+                            &app,
+                            &job,
+                            false,
+                            None,
+                            Some("任务已取消".to_string()),
+                            0,
+                            None,
+                            0,
+                            0,
+                        );
                         registry.remove(&job.job_id);
                         return JobOutcome::Cancelled;
                     }
@@ -183,29 +211,34 @@ pub async fn start_batch(
                     }
                 };
 
-                let permit = match acquire_with_control(
-                    &app,
-                    &job,
-                    &control,
-                    semaphore,
-                    "等待并发空位",
-                )
-                .await
-                {
-                    Ok(Some(permit)) => permit,
-                    Ok(None) => {
-                        drop(destination_permit);
-                        emit_finished(&app, &job, false, None, Some("任务已取消".to_string()), 0, None, 0, 0);
-                        registry.remove(&job.job_id);
-                        return JobOutcome::Cancelled;
-                    }
-                    Err(error) => {
-                        drop(destination_permit);
-                        emit_finished(&app, &job, false, None, Some(error), 0, None, 0, 0);
-                        registry.remove(&job.job_id);
-                        return JobOutcome::Failed;
-                    }
-                };
+                let permit =
+                    match acquire_with_control(&app, &job, &control, semaphore, "等待并发空位")
+                        .await
+                    {
+                        Ok(Some(permit)) => permit,
+                        Ok(None) => {
+                            drop(destination_permit);
+                            emit_finished(
+                                &app,
+                                &job,
+                                false,
+                                None,
+                                Some("任务已取消".to_string()),
+                                0,
+                                None,
+                                0,
+                                0,
+                            );
+                            registry.remove(&job.job_id);
+                            return JobOutcome::Cancelled;
+                        }
+                        Err(error) => {
+                            drop(destination_permit);
+                            emit_finished(&app, &job, false, None, Some(error), 0, None, 0, 0);
+                            registry.remove(&job.job_id);
+                            return JobOutcome::Failed;
+                        }
+                    };
 
                 emit_progress(&app, &job, 1, "extracting", "任务已开始");
                 let started = Instant::now();
@@ -241,7 +274,10 @@ pub async fn start_batch(
                         let manifest_path = match write_manifest(&app, &job, &report) {
                             Ok(path) => Some(path.to_string_lossy().to_string()),
                             Err(error) => {
-                                eprintln!("failed to write extraction manifest for {}: {error}", job.job_id);
+                                eprintln!(
+                                    "failed to write extraction manifest for {}: {error}",
+                                    job.job_id
+                                );
                                 None
                             }
                         };
@@ -363,7 +399,9 @@ pub fn preflight_jobs(request: PreflightRequest) -> PreflightResult {
         let inspected = inspect_path(&archive);
         let archive_size = fs::metadata(&archive).map(|meta| meta.len()).unwrap_or(0);
         let multiplier = request.space_multiplier.clamp(1, 10);
-        let estimated_required_bytes = archive_size.saturating_mul(multiplier).max(16 * 1024 * 1024);
+        let estimated_required_bytes = archive_size
+            .saturating_mul(multiplier)
+            .max(16 * 1024 * 1024);
         let mut issues = Vec::new();
         let output_path = match planned_destination(&job) {
             Ok(path) => Some(path),
@@ -433,25 +471,35 @@ pub fn preflight_jobs(request: PreflightRequest) -> PreflightResult {
             if request.check_disk_space {
                 let mut probe = destination.as_path();
                 while !probe.exists() {
-                    let Some(parent) = probe.parent() else { break; };
+                    let Some(parent) = probe.parent() else {
+                        break;
+                    };
                     probe = parent;
                 }
                 if probe.exists() {
                     match fs2::available_space(probe) {
                         Ok(bytes) => {
                             available_bytes = Some(bytes);
-                            let required = estimated_required_bytes.saturating_add(request.minimum_free_bytes);
+                            let required =
+                                estimated_required_bytes.saturating_add(request.minimum_free_bytes);
                             if bytes < required {
                                 issues.push(PreflightIssue {
                                     code: "low-disk-space".to_string(),
                                     severity: "error",
-                                    message: format!("可用空间不足：预计至少需要 {} MB，当前约 {} MB。", required / 1024 / 1024, bytes / 1024 / 1024),
+                                    message: format!(
+                                        "可用空间不足：预计至少需要 {} MB，当前约 {} MB。",
+                                        required / 1024 / 1024,
+                                        bytes / 1024 / 1024
+                                    ),
                                 });
                             } else if bytes < required.saturating_mul(2) {
                                 issues.push(PreflightIssue {
                                     code: "disk-space-tight".to_string(),
                                     severity: "warning",
-                                    message: format!("磁盘空间较紧张：当前约 {} MB 可用。", bytes / 1024 / 1024),
+                                    message: format!(
+                                        "磁盘空间较紧张：当前约 {} MB 可用。",
+                                        bytes / 1024 / 1024
+                                    ),
                                 });
                             }
                         }
@@ -465,8 +513,14 @@ pub fn preflight_jobs(request: PreflightRequest) -> PreflightResult {
             }
         }
 
-        blocking_issue_count += issues.iter().filter(|issue| issue.severity == "error").count();
-        warning_count += issues.iter().filter(|issue| issue.severity == "warning").count();
+        blocking_issue_count += issues
+            .iter()
+            .filter(|issue| issue.severity == "error")
+            .count();
+        warning_count += issues
+            .iter()
+            .filter(|issue| issue.severity == "warning")
+            .count();
         results.push(PreflightJobResult {
             job_id: job.job_id,
             channel_id: job.channel_id,
@@ -479,7 +533,11 @@ pub fn preflight_jobs(request: PreflightRequest) -> PreflightResult {
         });
     }
 
-    PreflightResult { jobs: results, blocking_issue_count, warning_count }
+    PreflightResult {
+        jobs: results,
+        blocking_issue_count,
+        warning_count,
+    }
 }
 
 #[tauri::command]
@@ -581,7 +639,13 @@ async fn acquire_with_control(
     }
 }
 
-fn emit_progress(app: &AppHandle, job: &ExtractionJob, progress: u8, phase: &'static str, message: &str) {
+fn emit_progress(
+    app: &AppHandle,
+    job: &ExtractionJob,
+    progress: u8,
+    phase: &'static str,
+    message: &str,
+) {
     let _ = app.emit(
         "extract-progress",
         ProgressEvent {

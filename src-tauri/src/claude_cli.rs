@@ -53,10 +53,10 @@ fn existing_path_from_lines(output: &str) -> Option<PathBuf> {
 #[cfg(target_os = "windows")]
 fn push_unique_path(paths: &mut Vec<PathBuf>, path: PathBuf) {
     let candidate = path.to_string_lossy().to_string();
-    if !paths
-        .iter()
-        .any(|item| item.to_string_lossy().eq_ignore_ascii_case(candidate.as_str()))
-    {
+    if !paths.iter().any(|item| {
+        item.to_string_lossy()
+            .eq_ignore_ascii_case(candidate.as_str())
+    }) {
         paths.push(path);
     }
 }
@@ -101,15 +101,13 @@ fn package_bin_resolution(package_root: &Path) -> Option<ClaudeCliResolution> {
     let package_json = package_root.join("package.json");
     let bytes = fs::read(package_json).ok()?;
     let value: serde_json::Value = serde_json::from_slice(&bytes).ok()?;
-    let relative = value
-        .get("bin")
-        .and_then(|bin| {
-            bin.as_str().map(str::to_string).or_else(|| {
-                bin.get("claude")
-                    .and_then(serde_json::Value::as_str)
-                    .map(str::to_string)
-            })
-        })?;
+    let relative = value.get("bin").and_then(|bin| {
+        bin.as_str().map(str::to_string).or_else(|| {
+            bin.get("claude")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_string)
+        })
+    })?;
     let target = package_root.join(relative);
     if !target.is_file() {
         return None;
@@ -215,10 +213,9 @@ pub(crate) fn resolve_claude_cli() -> Result<ClaudeCliResolution, String> {
         if let Some(resolution) = package_bin_resolution(&package_root) {
             return Ok(resolution);
         }
-        if let Some(resolution) = native_package_resolution(
-            &package_root,
-            "npm 官方包 @anthropic-ai/claude-code",
-        ) {
+        if let Some(resolution) =
+            native_package_resolution(&package_root, "npm 官方包 @anthropic-ai/claude-code")
+        {
             return Ok(resolution);
         }
 
@@ -240,7 +237,10 @@ pub(crate) fn resolve_claude_cli() -> Result<ClaudeCliResolution, String> {
 }
 
 #[cfg(target_os = "windows")]
-fn resolution_output(resolution: &ClaudeCliResolution, trailing_argument: &str) -> Result<String, String> {
+fn resolution_output(
+    resolution: &ClaudeCliResolution,
+    trailing_argument: &str,
+) -> Result<String, String> {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x08000000;
 
@@ -295,7 +295,12 @@ pub(crate) fn check_claude_cli() -> ClaudeCliStatus {
             let message = version
                 .as_ref()
                 .map(|value| format!("Claude CLI 可用：{value}（{}）", resolution.source))
-                .unwrap_or_else(|| format!("Claude CLI 已找到（{}），但未读取到版本号", resolution.source));
+                .unwrap_or_else(|| {
+                    format!(
+                        "Claude CLI 已找到（{}），但未读取到版本号",
+                        resolution.source
+                    )
+                });
             ClaudeCliStatus {
                 available: true,
                 executable: Some(resolution.executable.to_string_lossy().to_string()),

@@ -5,15 +5,15 @@ mod kind;
 mod layout;
 mod path_safety;
 
-pub use error::ArchiveError;
 use crate::models::{ExtractionJob, InspectedFile};
+use crate::task_control::TaskControl;
+pub use error::ArchiveError;
 use extractors::{extract_7z, extract_rar, extract_single_stream, extract_tar, extract_zip};
 use kind::{archive_folder_name, detect_kind, ArchiveKind};
 use layout::materialize;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::task_control::TaskControl;
 use tempfile::TempDir;
 
 pub fn inspect_path(path: &Path) -> InspectedFile {
@@ -27,7 +27,10 @@ pub fn inspect_path(path: &Path) -> InspectedFile {
             .to_string_lossy()
             .to_string(),
         size: metadata.as_ref().map(|item| item.len()).unwrap_or(0),
-        format: kind.map(ArchiveKind::label).unwrap_or("UNKNOWN").to_string(),
+        format: kind
+            .map(ArchiveKind::label)
+            .unwrap_or("UNKNOWN")
+            .to_string(),
         supported: metadata.map(|item| item.is_file()).unwrap_or(false) && kind.is_some(),
     }
 }
@@ -41,7 +44,11 @@ pub struct ExtractionReport {
     pub output_root_created: bool,
 }
 
-pub fn extract_job<F>(job: &ExtractionJob, cancel: &TaskControl, mut progress: F) -> Result<ExtractionReport, ArchiveError>
+pub fn extract_job<F>(
+    job: &ExtractionJob,
+    cancel: &TaskControl,
+    mut progress: F,
+) -> Result<ExtractionReport, ArchiveError>
 where
     F: FnMut(u8, &'static str, String),
 {
@@ -77,9 +84,27 @@ where
 
     progress(2, "extracting", format!("准备解压 {}", kind.label()));
     match kind {
-        ArchiveKind::Zip => extract_zip(&archive_path, &raw_dir, job.password.as_deref(), cancel, &mut progress)?,
-        ArchiveKind::SevenZip => extract_7z(&archive_path, &raw_dir, job.password.as_deref(), cancel, &mut progress)?,
-        ArchiveKind::Rar => extract_rar(&archive_path, &raw_dir, job.password.as_deref(), cancel, &mut progress)?,
+        ArchiveKind::Zip => extract_zip(
+            &archive_path,
+            &raw_dir,
+            job.password.as_deref(),
+            cancel,
+            &mut progress,
+        )?,
+        ArchiveKind::SevenZip => extract_7z(
+            &archive_path,
+            &raw_dir,
+            job.password.as_deref(),
+            cancel,
+            &mut progress,
+        )?,
+        ArchiveKind::Rar => extract_rar(
+            &archive_path,
+            &raw_dir,
+            job.password.as_deref(),
+            cancel,
+            &mut progress,
+        )?,
         ArchiveKind::Tar | ArchiveKind::TarGz | ArchiveKind::TarBz2 | ArchiveKind::TarXz => {
             extract_tar(&archive_path, &raw_dir, kind, cancel, &mut progress)?
         }
@@ -126,7 +151,9 @@ fn resolve_destination(job: &ExtractionJob, archive_path: &Path) -> Result<PathB
             .ok_or_else(|| ArchiveError::InvalidPath("无法确定压缩包所在目录".to_string()))?
     } else {
         if job.destination.trim().is_empty() {
-            return Err(ArchiveError::InvalidPath("尚未设置解压目标目录".to_string()));
+            return Err(ArchiveError::InvalidPath(
+                "尚未设置解压目标目录".to_string(),
+            ));
         }
         PathBuf::from(job.destination.trim())
     };
@@ -137,7 +164,6 @@ fn resolve_destination(job: &ExtractionJob, archive_path: &Path) -> Result<PathB
         Ok(base)
     }
 }
-
 
 pub(super) fn check_cancel(cancel: &TaskControl) -> Result<(), ArchiveError> {
     if cancel.checkpoint() {
@@ -194,7 +220,10 @@ mod integration_tests {
         let output = temp.path().join("output");
         create_tar(
             &archive,
-            &[("package/assets/icon.txt", b"icon"), ("package/readme.txt", b"readme")],
+            &[
+                ("package/assets/icon.txt", b"icon"),
+                ("package/readme.txt", b"readme"),
+            ],
         );
 
         let cancel = TaskControl::default();
@@ -225,6 +254,9 @@ mod integration_tests {
         );
 
         assert!(result.is_err());
-        assert!(!output.exists(), "failed extraction must not leave an output directory");
+        assert!(
+            !output.exists(),
+            "failed extraction must not leave an output directory"
+        );
     }
 }

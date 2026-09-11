@@ -56,10 +56,14 @@ pub(super) fn copy_with_policy(
     }
 }
 
-fn copy_overwrite_atomic(source: &Path, desired: &Path, cancel: &TaskControl) -> Result<(), ArchiveError> {
-    let parent = desired
-        .parent()
-        .ok_or_else(|| ArchiveError::InvalidPath(format!("目标文件缺少父目录：{}", desired.display())))?;
+fn copy_overwrite_atomic(
+    source: &Path,
+    desired: &Path,
+    cancel: &TaskControl,
+) -> Result<(), ArchiveError> {
+    let parent = desired.parent().ok_or_else(|| {
+        ArchiveError::InvalidPath(format!("目标文件缺少父目录：{}", desired.display()))
+    })?;
     let mut staged = NamedTempFile::new_in(parent)?;
     {
         let mut source_file = File::open(source)?;
@@ -95,14 +99,22 @@ fn copy_overwrite_atomic(source: &Path, desired: &Path, cancel: &TaskControl) ->
     }
 }
 
-fn copy_unique(source: &Path, desired: &Path, cancel: &TaskControl) -> Result<PathBuf, ArchiveError> {
+fn copy_unique(
+    source: &Path,
+    desired: &Path,
+    cancel: &TaskControl,
+) -> Result<PathBuf, ArchiveError> {
     for index in 0u32..10_000 {
         let candidate = if index == 0 {
             desired.to_path_buf()
         } else {
             collision_name(desired, index + 1)
         };
-        match OpenOptions::new().write(true).create_new(true).open(&candidate) {
+        match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&candidate)
+        {
             Ok(mut target) => {
                 let copy_result = (|| -> Result<(), ArchiveError> {
                     let mut source_file = File::open(source)?;
