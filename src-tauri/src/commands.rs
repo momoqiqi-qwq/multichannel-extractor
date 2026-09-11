@@ -504,12 +504,13 @@ pub fn read_text_file(path: String) -> Result<String, String> {
 
 #[tauri::command]
 pub fn open_output(app: AppHandle, path: String) -> Result<(), String> {
-    let path = Path::new(path.trim());
+    let target = path.trim().to_string();
+    let path = Path::new(&target);
     if !path.exists() {
         return Err(format!("路径不存在：{}", path.display()));
     }
     app.opener()
-        .open_path(path, None::<&str>)
+        .open_path(target, None::<&str>)
         .map_err(|error| error.to_string())
 }
 
