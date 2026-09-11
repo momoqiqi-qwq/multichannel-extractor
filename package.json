@@ -1,0 +1,38 @@
+{
+  "name": "jieyatai-2",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "check": "npm run check:config && npm run check:layout && npm run check:start-flow && npm run check:085ux && npm run check:jieyatai1ux2 && npm run check:jieyatai2 && npm run build && cargo fmt --manifest-path src-tauri/Cargo.toml -- --check && cargo check --manifest-path src-tauri/Cargo.toml && cargo test --manifest-path src-tauri/Cargo.toml",
+    "check:config": "node scripts/check-config.mjs",
+    "check:layout": "node scripts/check-layout.mjs",
+    "check:081": "node scripts/check-081.mjs",
+    "check:082": "node scripts/check-082.mjs",
+    "check:083": "node scripts/check-083.mjs",
+    "check:084": "node scripts/check-084.mjs",
+    "check:085": "node scripts/check-085.mjs",
+    "check:start-flow": "node scripts/check-start-flow.mjs",
+    "check:085ux": "node scripts/check-085-ux.mjs",
+    "preview:browser": "vite --host 127.0.0.1 --open",
+    "check:jieyatai1ux2": "node scripts/check-jieyatai-1-ux2.mjs",
+    "check:jieyatai2": "node scripts/check-jieyatai-2.mjs"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-dialog": "^2.0.0",
+    "pinia": "^3.0.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.0.0",
+    "vue-tsc": "^3.0.0"
+  }
+}

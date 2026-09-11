@@ -1,0 +1,21 @@
+jieyatai-1 validation
+Date: 2026-08-21
+
+PASS - package release package name: jieyatai-1
+PASS - technical version: 1.0.0 in package.json / Tauri / Cargo / frontend version config
+PASS - user-facing release label: jieyatai-1
+PASS - existing static config/layout checks
+PASS - 0.8.1 / 0.8.2 / 0.8.3 / 0.8.4 / 0.8.5 regression static checks
+PASS - 0.8.5 UX regression: qd launch search, keyboard navigation, search shortcuts, workspace search/reset
+PASS - jieyatai-1 dedicated static check
+PASS - start-flow dedicated static check
+PASS - detailed explanations setting is typed, defaulted, persisted through appSettings, bound in UI, and controls detailed-explanation blocks
+PASS - channel destination center is mounted as a dedicated settings tab
+PASS - channel destination center supports archive-follow/custom modes, path editing, browse, default/recent/first-file paths, local search, and missing-path fill
+PASS - settings search indexes the destination center and detailed explanations
+PASS - direct file:// source opening now shows an explanatory start panel
+PASS - Windows one-click launchers added: start-web-preview.cmd and start-tauri-dev.cmd
+PASS - Vite browser preview command added: npm run preview:browser
+
+NOT RUN - full Vue/Vite build. The uploaded source package has no node_modules; npm install timed out after 120 seconds in the current environment.
+NOT RUN - Rust cargo check/test. cargo is not installed in the current environment.

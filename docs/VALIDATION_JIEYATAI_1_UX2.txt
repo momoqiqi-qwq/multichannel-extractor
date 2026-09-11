@@ -1,0 +1,35 @@
+jieyatai-1 UX2 validation
+===========================
+
+Static regression checks: PASS
+- check-config.mjs
+- check-layout.mjs
+- check-081.mjs
+- check-082.mjs
+- check-083.mjs
+- check-084.mjs
+- check-085.mjs
+- check-085-ux.mjs
+- check-jieyatai-1.mjs
+- check-start-flow.mjs
+- check-jieyatai-1-ux2.mjs
+
+TypeScript syntax transpile check: PASS
+- 52 source files parsed/transpiled with the globally available TypeScript compiler API.
+
+Full npm/Vite build: NOT COMPLETED
+- Source package does not contain node_modules.
+- npm install --no-audit --no-fund --ignore-scripts timed out after 120 seconds in the current environment.
+- This is an environment/dependency-install limitation, not a reported Vite compilation error.
+
+Rust cargo build/check: NOT RUN
+- cargo is not available in the current environment.
+
+Key UX2 assertions:
+- scanLatestOnEmptyStart exists and defaults to true.
+- Start flow was extracted to src/stores/channelStartActions.ts.
+- Empty queue can scan latest archive and automatically start.
+- Explicit completed-channel scan remains available.
+- Workspace display controls use “开关” terminology and include 8 new controls.
+- Saved channel presets can be deleted from ChannelCard and Maintenance settings.
+- kg searches for switch-related settings; qd launch/start search remains supported.

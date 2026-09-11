@@ -1,0 +1,22 @@
+解压台 0.8.2 验证记录
+
+已通过：
+- node scripts/check-config.mjs
+- node scripts/check-layout.mjs
+- node scripts/check-081.mjs
+- node scripts/check-082.mjs
+- 4 个检查脚本的 node --check
+- TypeScript 与 Vue script setup 语法检查
+- 使用依赖类型桩的 TypeScript 语义检查
+- 交付 ZIP 完整性检查
+
+环境限制：
+- 当前环境没有 Rust/Cargo，未执行 cargo fmt、cargo check、cargo test 或 Tauri 打包。
+- 当前项目未安装 node_modules，未执行官方 vue-tsc 与 Vite 完整构建。
+- 未在 Windows 实机验证目录选择、打开目录、系统剪贴板、Claude CLI 与新命令窗口。
+
+建议发布前执行：
+1. npm install（或补齐锁文件后 npm ci）
+2. npm run check
+3. npm run tauri build
+4. Windows 10/11 实机验证项目中心、Claude DAT 和危险参数确认流程

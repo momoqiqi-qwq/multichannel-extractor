@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解压台 · 多通道批量解压</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#191b1f;
+    --panel:#212328;
+    --panel-raised:#26282e;
+    --panel-inset:#1c1e22;
+    --border:#33363d;
+    --border-strong:#454851;
+    --text:#e9e7e2;
+    --text-dim:#8b8d94;
+    --text-faint:#5c5f66;
+    --accent:#4fd1a5;
+    --accent-dim:rgba(79,209,165,0.12);
+    --accent-text:#8fe6c3;
+    --warn:#e8a33d;
+    --warn-dim:rgba(232,163,61,0.12);
+    --warn-text:#f0bd6e;
+    --danger:#e2645a;
+    --danger-dim:rgba(226,100,90,0.12);
+    --danger-text:#ec8a82;
+    --radius:6px;
+    --font-mono:'IBM Plex Mono', monospace;
+    --font-sans:'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-sans);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+  button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+  input[type="checkbox"]:focus-visible{ outline-offset:1px; }
+
+  /* ---------- 顶栏 ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 24px; border-bottom:1px solid var(--border); background:var(--panel);
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:26px; height:26px; border-radius:5px;
+    background:linear-gradient(180deg, #2a2d33, #1c1e22);
+    border:1px solid var(--border-strong);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand-mark span{ width:3px; height:12px; border-radius:2px; background:var(--accent); display:inline-block; margin:0 1.5px; }
+  .brand-mark span:nth-child(2){ height:8px; background:var(--warn); }
+  .brand-mark span:nth-child(3){ height:15px; }
+  .brand-title{ font-family:var(--font-mono); font-size:14px; font-weight:600; letter-spacing:0.02em; }
+  .brand-sub{ font-size:11px; color:var(--text-faint); margin-top:1px; }
+  .topbar-right{ display:flex; align-items:center; gap:10px; }
+  .concurrency{
+    display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-dim);
+    padding:6px 10px; background:var(--panel-inset); border:1px solid var(--border); border-radius:var(--radius);
+  }
+  .concurrency input[type=range]{ width:70px; accent-color:var(--accent); }
+  .concurrency b{ color:var(--text); font-family:var(--font-mono); font-weight:500;}
+
+  .btn{
+    font-family:var(--font-sans); font-size:13px; font-weight:500;
+    padding:8px 14px; border-radius:var(--radius); border:1px solid var(--border-strong);
+    background:var(--panel-raised); color:var(--text); cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px; transition:background 0.12s, border-color 0.12s;
+    white-space:nowrap;
+  }
+  .btn:hover{ background:#2c2f36; border-color:#565961; }
+  .btn:active{ transform:scale(0.98); }
+  .btn-primary{ background:var(--accent-dim); border-color:var(--accent); color:var(--accent-text); }
+  .btn-primary:hover{ background:rgba(79,209,165,0.2); }
+  .btn-ghost{ background:transparent; border-color:transparent; color:var(--text-dim); padding:6px 8px; }
+  .btn-ghost:hover{ background:var(--panel-raised); color:var(--text); }
+  .btn-sm{ padding:6px 10px; font-size:12px; }
+  .icon{ width:14px; height:14px; flex-shrink:0; }
+
+  /* ---------- 主区域 ---------- */
+  .board{
+    flex:1; display:flex; flex-direction:column; gap:10px;
+    padding:20px 24px; overflow-y:auto;
+  }
+
+  .col-head{
+    display:flex; align-items:center; gap:14px;
+    padding:0 16px 6px;
+    font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em;
+  }
+  .col-head > div{ flex-shrink:0; }
+  .ch-w-id{ width:170px; }
+  .ch-w-files{ flex:1; min-width:0; }
+  .ch-w-meter{ width:130px; }
+  .ch-w-actions{ width:150px; text-align:right; }
+
+  /* 通道: 整块就是拖放目标 */
+  .channel{
+    background:var(--panel);
+    border:1.5px solid var(--border);
+    border-radius:8px;
+    position:relative;
+    transition:border-color 0.15s, background 0.15s;
+  }
+  .channel:hover{ border-color:var(--border-strong); }
+  .channel.drag{
+    border-color:var(--accent);
+    background:var(--accent-dim);
+  }
+  .channel.drag .drag-hint{ opacity:1; }
+  .channel::before{
+    content:'';
+    position:absolute; left:0; top:10px; bottom:10px; width:3px;
+    border-radius:0 3px 3px 0;
+    background:var(--border-strong);
+  }
+  .channel[data-state="processing"]::before{ background:var(--warn); }
+  .channel[data-state="done"]::before{ background:var(--accent); }
+  .channel[data-state="error"]::before{ background:var(--danger); }
+
+  .drag-hint{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    gap:8px;
+    background:var(--accent-dim);
+    border:1.5px dashed var(--accent);
+    border-radius:8px;
+    color:var(--accent-text);
+    font-size:13px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.1s;
+    z-index:2;
+  }
+
+  .channel-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:12px 16px;
+  }
+
+  /* 1. 通道标识 */
+  .cell-id{ width:170px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:6px; }
+  .channel-id{ font-family:var(--font-mono); font-size:10px; color:var(--text-faint); letter-spacing:0.05em; }
+  .channel-name{
+    font-size:14px; font-weight:500; background:transparent; border:none; color:var(--text);
+    width:100%; font-family:var(--font-sans); padding:0;
+  }
+  .channel-name:focus{ outline:none; }
+  .status-pill{
+    font-family:var(--font-mono); font-size:10px; padding:3px 8px 3px 6px; border-radius:20px;
+    white-space:nowrap; letter-spacing:0.02em; width:fit-content;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .status-pill::before{ content:''; width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+  .status-idle{ background:var(--panel-inset); color:var(--text-faint); border:1px solid var(--border); }
+  .status-idle::before{ background:var(--text-faint); }
+  .status-processing{ background:var(--warn-dim); color:var(--warn-text); border:1px solid rgba(232,163,61,0.3); }
+  .status-processing::before{ background:var(--warn); animation:pulse-dot 1.6s ease-in-out infinite; }
+  @keyframes pulse-dot{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
+  .status-done{ background:var(--accent-dim); color:var(--accent-text); border:1px solid rgba(79,209,165,0.3); }
+  .status-done::before{ background:var(--accent); }
+  .status-error{ background:var(--danger-dim); color:var(--danger-text); border:1px solid rgba(226,100,90,0.3); }
+  .status-error::before{ background:var(--danger); }
+
+  .cell-sep{ width:1px; align-self:stretch; background:var(--border); flex-shrink:0; margin:2px 0; }
+
+  /* 2. 文件队列 */
+  .cell-files{ flex:1; min-width:0; }
+  .filelist{ display:flex; gap:6px; overflow-x:auto; padding:2px 0; }
+  .filelist::-webkit-scrollbar{ height:5px; }
+  .filelist::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:4px; }
+  .file-chip{
+    display:flex; align-items:center; gap:6px; padding:6px 9px;
+    background:var(--panel-inset); border:1px solid var(--border); border-radius:20px;
+    font-size:11px; white-space:nowrap; flex-shrink:0;
+  }
+  .file-icon{ color:var(--text-faint); flex-shrink:0; width:12px; height:12px; }
+  .file-check{ color:var(--accent); flex-shrink:0; width:12px; height:12px; }
+  .file-err{ color:var(--danger-text); flex-shrink:0; width:12px; height:12px; }
+  .file-name{ color:var(--text); max-width:140px; overflow:hidden; text-overflow:ellipsis; }
+  .file-meta{ font-family:var(--font-mono); font-size:9px; color:var(--text-faint); }
+  .file-remove{
+    background:none; border:none; color:var(--text-faint); cursor:pointer; padding:0;
+    display:flex; align-items:center; flex-shrink:0;
+    opacity:0.5; transition:opacity 0.12s, color 0.12s;
+  }
+  .file-chip:hover .file-remove, .file-remove:focus-visible{ opacity:1; }
+  .file-remove:hover{ color:var(--danger-text); opacity:1; }
+  .file-remove svg{ width:11px; height:11px; }
+  .empty-hint{ font-size:11px; color:var(--text-faint); }
+  .file-chip{ transition:border-color 0.12s; }
+  .file-chip:hover{ border-color:var(--border-strong); }
+
+  /* 3. 电平表 */
+  .cell-meter{ width:130px; flex-shrink:0; }
+  .meter{ display:flex; gap:2px; height:6px; }
+  .meter-seg{ flex:1; height:6px; border-radius:1px; background:var(--panel-inset); border:1px solid var(--border); }
+  .meter-seg.on{ background:var(--accent); border-color:var(--accent); }
+  .meter-seg.on.warn{ background:var(--warn); border-color:var(--warn); }
+  .meter-seg.on.err{ background:var(--danger); border-color:var(--danger); }
+  .foot-stat{ font-size:10px; color:var(--text-faint); font-family:var(--font-mono); margin-top:5px; }
+
+  /* 4. 操作 + 展开按钮 */
+  .cell-actions{ width:150px; flex-shrink:0; display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+  .expand-toggle{
+    background:none; border:1px solid var(--border); border-radius:5px;
+    color:var(--text-faint); cursor:pointer; padding:6px 7px;
+    display:flex; align-items:center; gap:4px; font-size:11px;
+  }
+  .expand-toggle:hover{ color:var(--text); border-color:var(--border-strong); }
+  .expand-toggle svg{ width:12px; height:12px; transition:transform 0.15s; }
+  .channel.expanded .expand-toggle svg{ transform:rotate(180deg); }
+
+  .channel-remove{
+    position:absolute; top:8px; right:8px; background:none; border:none;
+    color:var(--text-faint); cursor:pointer; display:flex; padding:2px; z-index:1;
+  }
+  .channel-remove:hover{ color:var(--danger-text); }
+  .channel-remove svg{ width:13px; height:13px; }
+
+  /* ---------- 折叠的详细设置面板 ---------- */
+  .channel-detail{
+    display:grid;
+    grid-template-rows:0fr;
+    transition:grid-template-rows 0.18s ease;
+  }
+  .channel.expanded .channel-detail{ grid-template-rows:1fr; }
+  .channel-detail-inner{ overflow:hidden; }
+
+  .detail-row{
+    display:flex; gap:20px;
+    padding:14px 16px 16px;
+    border-top:1px solid var(--border);
+    margin-top:2px;
+  }
+  .detail-block{ flex:1; min-width:0; }
+  .detail-block.narrow{ flex:0 0 260px; }
+  .setting-label{ font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+  .path-row{ display:flex; gap:6px; }
+  .path-input{
+    flex:1; min-width:0; background:var(--panel-inset); border:1px solid var(--border);
+    border-radius:5px; padding:7px 9px; font-size:12px; font-family:var(--font-mono); color:var(--text);
+  }
+  .path-input:focus{ outline:none; border-color:var(--accent); }
+  .path-browse{
+    background:var(--panel-raised); border:1px solid var(--border); border-radius:5px;
+    padding:0 9px; color:var(--text-dim); cursor:pointer; display:flex; align-items:center; flex-shrink:0;
+  }
+  .path-browse:hover{ background:#2c2f36; color:var(--text); }
+  .path-quick{
+    font-size:11px; color:var(--text-faint); display:flex; align-items:center; gap:5px;
+    cursor:pointer; width:fit-content; margin-top:7px;
+  }
+  .path-quick:hover{ color:var(--text-dim); }
+  .path-quick input{ accent-color:var(--accent); width:12px; height:12px; }
+
+  .depth-modes{ display:flex; gap:5px; }
+  .depth-mode-btn{
+    flex:1; font-size:11px; padding:6px 4px; border-radius:5px; border:1px solid var(--border);
+    background:var(--panel-inset); color:var(--text-faint); cursor:pointer; text-align:center; white-space:nowrap;
+  }
+  .depth-mode-btn.active{ border-color:var(--accent); background:var(--accent-dim); color:var(--accent-text); }
+  .depth-mode-btn:hover:not(.active){ color:var(--text-dim); border-color:var(--border-strong); }
+  .layer-stack{ display:flex; gap:3px; margin-top:8px; }
+  .layer-block{
+    flex:1; height:14px; border-radius:3px; background:var(--panel-inset); border:1px solid var(--border);
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .layer-block span{ font-family:var(--font-mono); font-size:8px; color:var(--text-faint); }
+  .layer-block.kept{ background:var(--accent-dim); border-color:var(--accent); }
+  .layer-block.kept span{ color:var(--accent-text); }
+  .layer-block.flattened{ background:var(--panel-raised); border-color:var(--border-strong); }
+  .layer-block.flattened span{ color:var(--text-dim); }
+  .layer-caption{ font-size:10px; color:var(--text-faint); margin-top:6px; font-family:var(--font-mono); }
+
+  /* 新建通道 */
+  .add-channel{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    border:1.5px dashed var(--border); border-radius:8px; padding:14px;
+    cursor:pointer; color:var(--text-faint);
+    transition:border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .add-channel:hover{ border-color:var(--accent); color:var(--accent-text); background:var(--accent-dim); }
+  .add-channel-text{ font-size:13px; }
+
+  /* ---------- 底部状态栏 ---------- */
+  .statusbar{
+    border-top:1px solid var(--border); background:var(--panel); padding:9px 24px;
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:11px; color:var(--text-faint); font-family:var(--font-mono);
+  }
+  .statusbar-left{ display:flex; gap:18px; }
+  .statusbar-item{ display:flex; align-items:center; gap:5px; }
+  .dot{ width:5px; height:5px; border-radius:50%; background:var(--accent); }
+  .statusbar-link{ color:var(--text-dim); cursor:pointer; }
+  .statusbar-link:hover{ color:var(--text); }
+
+  svg{ display:block; }
+
+  @media (max-width: 1000px){
+    .board{ overflow-x:auto; }
+    .channel-row, .col-head{ min-width:900px; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><span></span><span></span><span></span></div>
+      <div>
+        <div class="brand-title">解压台</div>
+        <div class="brand-sub">多通道批量解压 · Tauri</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="concurrency">
+        并发数
+        <input type="range" min="1" max="8" value="3" id="concurrencyRange">
+        <b id="concurrencyVal">3</b>
+      </div>
+      <button class="btn btn-ghost" id="toggleAllBtn" title="展开或收起所有通道的详细设置">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+        <span id="toggleAllText">全部展开</span>
+      </button>
+      <button class="btn btn-ghost" title="解压日志">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        日志
+      </button>
+      <button class="btn btn-primary" id="startAllBtn">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l14 8-14 8V4z"/></svg>
+        全部开始
+      </button>
+    </div>
+  </header>
+
+  <main class="board" id="board">
+
+    <div class="col-head">
+      <div class="ch-w-id">通道</div>
+      <div class="ch-w-files">文件队列</div>
+      <div class="ch-w-meter">进度</div>
+      <div class="ch-w-actions">操作</div>
+    </div>
+
+    <!-- 通道 1 -->
+    <section class="channel" data-state="idle">
+      <div class="drag-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:18px;height:18px;"><path d="M12 4v12M6 10l6 6 6-6M5 20h14"/></svg>
+        松开鼠标导入到「项目素材包」
+      </div>
+      <button class="channel-remove" aria-label="删除通道" title="删除该通道">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+
+      <div class="channel-row">
+        <div class="cell-id">
+          <div class="channel-id">CH 01</div>
+          <input class="channel-name" value="项目素材包" />
+          <span class="status-pill status-idle">待开始</span>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-files">
+          <div class="filelist">
+            <div class="file-chip">
+              <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h10l6 6v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/></svg>
+              <span class="file-name">design_assets_v3.zip</span>
+              <span class="file-meta">128 MB</span>
+              <button class="file-remove" title="移除该文件"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+            </div>
+            <div class="file-chip">
+              <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h10l6 6v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/></svg>
+              <span class="file-name">fonts_pack.7z</span>
+              <span class="file-meta">14 MB</span>
+              <button class="file-remove" title="移除该文件"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-meter">
+          <div class="meter">
+            <div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div>
+          </div>
+          <div class="foot-stat">2 个文件</div>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-actions">
+          <button class="expand-toggle">
+            设置
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button class="btn btn-primary btn-sm">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:12px;height:12px;"><path d="M6 4l14 8-14 8V4z"/></svg>
+            开始
+          </button>
+        </div>
+      </div>
+
+      <div class="channel-detail">
+        <div class="channel-detail-inner">
+          <div class="detail-row">
+            <div class="detail-block narrow">
+              <div class="setting-label">解压到</div>
+              <div class="path-row">
+                <input class="path-input" value="D:\Projects\assets\extracted" />
+                <button class="path-browse" title="浏览文件夹"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg></button>
+              </div>
+              <label class="path-quick"><input type="checkbox">使用压缩包所在目录</label>
+            </div>
+            <div class="detail-block">
+              <div class="setting-label">解压层级</div>
+              <div class="depth-modes">
+                <button class="depth-mode-btn active">保留结构</button>
+                <button class="depth-mode-btn">展平层级</button>
+                <button class="depth-mode-btn">跳过外层</button>
+              </div>
+              <div class="layer-caption">完整还原压缩包内的目录结构</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 通道 2: 处理中，默认展开示例 -->
+    <section class="channel expanded" data-state="processing">
+      <div class="drag-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:18px;height:18px;"><path d="M12 4v12M6 10l6 6 6-6M5 20h14"/></svg>
+        松开鼠标导入到「客户交付资料」
+      </div>
+      <button class="channel-remove" aria-label="删除通道" title="删除该通道">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+
+      <div class="channel-row">
+        <div class="cell-id">
+          <div class="channel-id">CH 02</div>
+          <input class="channel-name" value="客户交付资料" />
+          <span class="status-pill status-processing">解压中 · 62%</span>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-files">
+          <div class="filelist">
+            <div class="file-chip">
+              <svg class="file-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 13l4 4L19 7"/></svg>
+              <span class="file-name">contract_v2.zip</span>
+              <span class="file-meta">完成</span>
+            </div>
+            <div class="file-chip">
+              <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h10l6 6v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/></svg>
+              <span class="file-name">render_output.rar</span>
+              <span class="file-meta">890 MB</span>
+            </div>
+            <div class="file-chip">
+              <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h10l6 6v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/></svg>
+              <span class="file-name">notes.tar.gz</span>
+              <span class="file-meta">等待中</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-meter">
+          <div class="meter">
+            <div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on warn"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div>
+          </div>
+          <div class="foot-stat">1/3 完成</div>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-actions">
+          <button class="expand-toggle">
+            设置
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button class="btn btn-sm">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:12px;height:12px;"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+            暂停
+          </button>
+        </div>
+      </div>
+
+      <div class="channel-detail">
+        <div class="channel-detail-inner">
+          <div class="detail-row">
+            <div class="detail-block narrow">
+              <div class="setting-label">解压到</div>
+              <div class="path-row">
+                <input class="path-input" value="~/Delivery/client_final" />
+                <button class="path-browse" title="浏览文件夹"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg></button>
+              </div>
+            </div>
+            <div class="detail-block">
+              <div class="setting-label">解压层级</div>
+              <div class="depth-modes">
+                <button class="depth-mode-btn">保留结构</button>
+                <button class="depth-mode-btn active">展平层级</button>
+                <button class="depth-mode-btn">跳过外层</button>
+              </div>
+              <div class="layer-stack">
+                <div class="layer-block kept"><span>1</span></div>
+                <div class="layer-block kept"><span>2</span></div>
+                <div class="layer-block flattened"><span>3</span></div>
+                <div class="layer-block flattened"><span>4</span></div>
+              </div>
+              <div class="layer-caption">保留前 2 层，其余展平合并</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 通道 3: 完成 -->
+    <section class="channel" data-state="done">
+      <div class="drag-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:18px;height:18px;"><path d="M12 4v12M6 10l6 6 6-6M5 20h14"/></svg>
+        松开鼠标导入到「下载归档」
+      </div>
+      <button class="channel-remove" aria-label="删除通道" title="删除该通道">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+
+      <div class="channel-row">
+        <div class="cell-id">
+          <div class="channel-id">CH 03</div>
+          <input class="channel-name" value="下载归档" />
+          <span class="status-pill status-done">全部完成</span>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-files">
+          <div class="filelist">
+            <div class="file-chip">
+              <svg class="file-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 13l4 4L19 7"/></svg>
+              <span class="file-name">steam_backup.zip</span>
+              <span class="file-meta">完成</span>
+            </div>
+            <div class="file-chip">
+              <svg class="file-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 13l4 4L19 7"/></svg>
+              <span class="file-name">mods_collection.7z</span>
+              <span class="file-meta">完成</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-meter">
+          <div class="meter">
+            <div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div><div class="meter-seg on"></div>
+          </div>
+          <div class="foot-stat">2/2 完成</div>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-actions">
+          <button class="expand-toggle">
+            设置
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button class="btn btn-sm">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:12px;height:12px;"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+            打开
+          </button>
+        </div>
+      </div>
+
+      <div class="channel-detail">
+        <div class="channel-detail-inner">
+          <div class="detail-row">
+            <div class="detail-block narrow">
+              <div class="setting-label">解压到</div>
+              <div class="path-row">
+                <input class="path-input" value="E:\Games\extracted" />
+                <button class="path-browse" title="浏览文件夹"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg></button>
+              </div>
+            </div>
+            <div class="detail-block">
+              <div class="setting-label">解压层级</div>
+              <div class="depth-modes">
+                <button class="depth-mode-btn">保留结构</button>
+                <button class="depth-mode-btn">展平层级</button>
+                <button class="depth-mode-btn active">跳过外层</button>
+              </div>
+              <div class="layer-caption">自动跳过压缩包内的单一根目录</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 通道 4: 错误 -->
+    <section class="channel" data-state="error">
+      <div class="drag-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:18px;height:18px;"><path d="M12 4v12M6 10l6 6 6-6M5 20h14"/></svg>
+        松开鼠标导入到「加密压缩包」
+      </div>
+      <button class="channel-remove" aria-label="删除通道" title="删除该通道">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+
+      <div class="channel-row">
+        <div class="cell-id">
+          <div class="channel-id">CH 04</div>
+          <input class="channel-name" value="加密压缩包" />
+          <span class="status-pill status-error">1 个失败</span>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-files">
+          <div class="filelist">
+            <div class="file-chip">
+              <svg class="file-err" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 8v5M12 16h.01M10.3 3.3l-8 14A2 2 0 004 20h16a2 2 0 001.7-2.7l-8-14a2 2 0 00-3.4 0z"/></svg>
+              <span class="file-name">private_docs.zip</span>
+              <span class="file-meta" style="color:var(--danger-text)">需要密码</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-meter">
+          <div class="meter">
+            <div class="meter-seg on err"></div><div class="meter-seg on err"></div><div class="meter-seg on err"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div><div class="meter-seg"></div>
+          </div>
+          <div class="foot-stat" style="color:var(--danger-text)">解压失败</div>
+        </div>
+
+        <div class="cell-sep"></div>
+
+        <div class="cell-actions">
+          <button class="expand-toggle">
+            设置
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button class="btn btn-sm">重试</button>
+        </div>
+      </div>
+
+      <div class="channel-detail">
+        <div class="channel-detail-inner">
+          <div class="detail-row">
+            <div class="detail-block narrow">
+              <div class="setting-label">解压到</div>
+              <div class="path-row">
+                <input class="path-input" value="C:\Users\me\Documents" />
+                <button class="path-browse" title="浏览文件夹"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg></button>
+              </div>
+            </div>
+            <div class="detail-block">
+              <div class="setting-label">解压层级</div>
+              <div class="depth-modes">
+                <button class="depth-mode-btn active">保留结构</button>
+                <button class="depth-mode-btn">展平层级</button>
+                <button class="depth-mode-btn">跳过外层</button>
+              </div>
+              <div class="layer-caption">完整还原压缩包内的目录结构</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 新建通道 -->
+    <div class="add-channel" id="addChannelBtn" role="button" tabindex="0" aria-label="新建通道">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+      <div class="add-channel-text">新建通道</div>
+    </div>
+
+  </main>
+
+  <footer class="statusbar">
+    <div class="statusbar-left">
+      <span class="statusbar-item"><span class="dot"></span>4 个通道</span>
+      <span class="statusbar-item">9 个文件</span>
+      <span class="statusbar-item">1 个处理中</span>
+      <span class="statusbar-item" style="color:var(--danger-text)">1 个失败</span>
+    </div>
+    <span class="statusbar-link">查看完整日志</span>
+  </footer>
+
+<script>
+  const range = document.getElementById('concurrencyRange');
+  const val = document.getElementById('concurrencyVal');
+  range.addEventListener('input', () => { val.textContent = range.value; });
+
+  function bindDepthModes(scope){
+    scope.querySelectorAll('.depth-modes').forEach(group => {
+      group.querySelectorAll('.depth-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          group.querySelectorAll('.depth-mode-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+    });
+  }
+
+  // 整个通道方框都是拖放目标
+  function bindChannelDrag(scope){
+    scope.querySelectorAll('.channel').forEach(ch => {
+      let depth = 0;
+      ch.addEventListener('dragenter', e => { e.preventDefault(); depth++; ch.classList.add('drag'); });
+      ch.addEventListener('dragover', e => { e.preventDefault(); });
+      ch.addEventListener('dragleave', e => { depth--; if (depth <= 0){ depth = 0; ch.classList.remove('drag'); } });
+      ch.addEventListener('drop', e => { e.preventDefault(); depth = 0; ch.classList.remove('drag'); });
+    });
+  }
+
+  function bindFileRemove(scope){
+    scope.querySelectorAll('.file-remove').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); btn.closest('.file-chip').remove(); });
+    });
+  }
+  function bindChannelRemove(scope){
+    scope.querySelectorAll('.channel-remove').forEach(btn => {
+      btn.addEventListener('click', () => { btn.closest('.channel').remove(); });
+    });
+  }
+  function bindExpandToggle(scope){
+    scope.querySelectorAll('.expand-toggle').forEach(btn => {
+      btn.addEventListener('click', () => { btn.closest('.channel').classList.toggle('expanded'); });
+    });
+  }
+
+  bindDepthModes(document);
+  bindChannelDrag(document);
+  bindFileRemove(document);
+  bindChannelRemove(document);
+  bindExpandToggle(document);
+
+  const toggleAllBtn = document.getElementById('toggleAllBtn');
+  const toggleAllText = document.getElementById('toggleAllText');
+  toggleAllBtn.addEventListener('click', () => {
+    const channels = document.querySelectorAll('.channel');
+    const anyCollapsed = Array.from(channels).some(c => !c.classList.contains('expanded'));
+    channels.forEach(c => c.classList.toggle('expanded', anyCollapsed));
+    toggleAllText.textContent = anyCollapsed ? '全部收起' : '全部展开';
+  });
+
+  const addChannelBtn = document.getElementById('addChannelBtn');
+  addChannelBtn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); addChannelBtn.click(); }
+  });
+  addChannelBtn.addEventListener('click', () => {
+    const board = document.getElementById('board');
+    const count = document.querySelectorAll('.channel').length + 1;
+    const el = document.createElement('section');
+    el.className = 'channel';
+    el.dataset.state = 'idle';
+    el.innerHTML = `
+      <div class="drag-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:18px;height:18px;"><path d="M12 4v12M6 10l6 6 6-6M5 20h14"/></svg>
+        松开鼠标导入到「新通道」
+      </div>
+      <button class="channel-remove" aria-label="删除通道" title="删除该通道">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div class="channel-row">
+        <div class="cell-id">
+          <div class="channel-id">CH ${String(count).padStart(2,'0')}</div>
+          <input class="channel-name" value="新通道" />
+          <span class="status-pill status-idle">待开始</span>
+        </div>
+        <div class="cell-sep"></div>
+        <div class="cell-files">
+          <div class="filelist"><span class="empty-hint">还没有文件，拖进整行任意位置试试</span></div>
+        </div>
+        <div class="cell-sep"></div>
+        <div class="cell-meter">
+          <div class="meter">${'<div class="meter-seg"></div>'.repeat(10)}</div>
+          <div class="foot-stat">0 个文件</div>
+        </div>
+        <div class="cell-sep"></div>
+        <div class="cell-actions">
+          <button class="expand-toggle">
+            设置
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button class="btn btn-primary btn-sm">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:12px;height:12px;"><path d="M6 4l14 8-14 8V4z"/></svg>
+            开始
+          </button>
+        </div>
+      </div>
+      <div class="channel-detail">
+        <div class="channel-detail-inner">
+          <div class="detail-row">
+            <div class="detail-block narrow">
+              <div class="setting-label">解压到</div>
+              <div class="path-row">
+                <input class="path-input" placeholder="选择目标路径" />
+                <button class="path-browse" title="浏览文件夹"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg></button>
+              </div>
+              <label class="path-quick"><input type="checkbox">使用压缩包所在目录</label>
+            </div>
+            <div class="detail-block">
+              <div class="setting-label">解压层级</div>
+              <div class="depth-modes">
+                <button class="depth-mode-btn active">保留结构</button>
+                <button class="depth-mode-btn">展平层级</button>
+                <button class="depth-mode-btn">跳过外层</button>
+              </div>
+              <div class="layer-caption">完整还原压缩包内的目录结构</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    board.insertBefore(el, document.getElementById('addChannelBtn'));
+    bindDepthModes(el); bindChannelDrag(el); bindFileRemove(el); bindChannelRemove(el); bindExpandToggle(el);
+  });
+</script>
+
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"850354c52aa4489fbe2aab7efa2c1124","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

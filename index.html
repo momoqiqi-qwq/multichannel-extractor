@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0d1b2d" />
+    <link rel="icon" type="image/svg+xml" href="/app-icon.svg" />
+    <link rel="alternate icon" type="image/png" href="/favicon.png" />
+    <title>解压台 · 多通道批量解压</title>
+  </head>
+  <body>
+    <div id="local-file-help" hidden style="max-width:760px;margin:8vh auto;padding:28px;border:1px solid #64748b;border-radius:16px;font-family:system-ui,sans-serif;line-height:1.7;color:#e5e7eb;background:#111827">
+      <h1 style="margin-top:0">解压台 · jieyatai-2</h1>
+      <p><b>这个 ZIP 是源码工程，不能直接双击 index.html 启动完整页面。</b></p>
+      <p>Windows 可直接双击项目根目录的 <code>start-web-preview.cmd</code>；也可以在终端执行 <code>npm install</code> 后运行 <code>npm run preview:browser</code>。桌面完整功能请运行 <code>npm run tauri dev</code>。</p>
+      <p style="opacity:.75">如果浏览器显示“无法访问 localhost:5173”，通常表示 Vite 服务尚未启动或已被关闭。</p>
+    </div>
+    <div id="app"></div>
+    <noscript>解压台需要启用 JavaScript 才能运行。</noscript>
+    <script>
+      if (window.location.protocol === 'file:') {
+        var help = document.getElementById('local-file-help');
+        if (help) help.hidden = false;
+      }
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

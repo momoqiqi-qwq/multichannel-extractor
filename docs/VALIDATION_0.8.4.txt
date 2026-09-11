@@ -1,0 +1,10 @@
+解压台 0.8.4 验证记录
+
+功能：通道项目工具新增“解压完成后自动运行 Claude”开关。
+目录：只使用成功任务返回的实际 outputPath。
+命令：claude --dangerously-skip-permissions。
+CLI：复用 PATH、npm 全局目录和 @anthropic-ai/claude-code 检测。
+安全：默认关闭，启用时确认，自动任务不重复确认。
+防重复：同一输出目录 8 秒内最多启动一次。
+持久化：通道、预设、配置导入导出、应用到全部均覆盖。
+版本：package/Tauri/Cargo/APP_VERSION = 0.8.4。

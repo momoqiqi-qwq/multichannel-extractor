@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="classic-dark" data-density="comfortable" data-custom-background="on" data-background-enabled="on" data-channel-transparency="on" data-glass="on" style="--custom-background-opacity:.88;--custom-background-overlay:.22;--custom-background-blur:0px;--custom-background-size:cover;--custom-background-position:center;--channel-panel-opacity:72%;--custom-background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221600%22 height=%22900%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x2=%221%22 y2=%221%22%3E%3Cstop stop-color=%22%230a3157%22/%3E%3Cstop offset=%22.45%22 stop-color=%22%23136da1%22/%3E%3Cstop offset=%221%22 stop-color=%22%23071325%22/%3E%3C/linearGradient%3E%3CradialGradient id=%22r%22%3E%3Cstop stop-color=%22%236fd1ff%22 stop-opacity=%22.8%22/%3E%3Cstop offset=%221%22 stop-color=%22%230a3157%22 stop-opacity=%220%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width=%221600%22 height=%22900%22 fill=%22url(%23g)%22/%3E%3Ccircle cx=%22420%22 cy=%22260%22 r=%22370%22 fill=%22url(%23r)%22/%3E%3Ccircle cx=%221260%22 cy=%22640%22 r=%22450%22 fill=%22url(%23r)%22 opacity=%22.5%22/%3E%3C/svg%3E')">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>解压台 UX 补丁预览</title>
+  <link rel="stylesheet" href="../src/style.css" />
+  <style>
+    body { overflow: hidden; }
+    .preview-tag { padding: 4px 8px; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--accent-text); font-size: 10px; }
+    .board { gap: 14px; }
+    .channel-row { min-height: 96px; }
+    .cell-files { min-height: 56px; display:flex; align-items:center; justify-content:center; border:1px dashed var(--border); border-radius:8px; color:var(--text-faint); font-size:11px; }
+    .meter-demo { display:grid; grid-template-columns:repeat(10,1fr); gap:3px; }
+    .meter-demo i { height:8px; border:1px solid var(--border-strong); border-radius:2px; }
+    .meter-demo i:nth-child(-n+6) { background:var(--accent); border-color:var(--accent); }
+    .fake-label { color:var(--text-faint); font-size:10px; margin-bottom:7px; text-transform:uppercase; letter-spacing:.06em; }
+    .fake-segments { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin-bottom:10px; }
+    .fake-segments span { padding:8px; border:1px solid var(--border); border-radius:6px; text-align:center; color:var(--text-faint); font-size:11px; background:var(--panel-inset); }
+    .fake-segments span.active { border-color:var(--accent); color:var(--accent-text); background:var(--accent-dim); }
+    .fake-input { padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--panel-inset); color:var(--text-dim); font-size:11px; }
+    .fake-note { margin-top:9px; padding:9px; border:1px solid color-mix(in srgb,var(--accent),transparent 55%); border-radius:6px; background:var(--accent-dim); color:var(--text-dim); font:10px/1.5 var(--font-mono); }
+    .category-list { display:grid; gap:8px; }
+    .category-list span { display:flex; align-items:center; justify-content:space-between; padding:8px; border-bottom:1px solid var(--border); color:var(--text-dim); font-size:11px; }
+    .preview-footer { padding:10px 16px 14px; display:flex; justify-content:space-between; border-top:1px dashed var(--border); color:var(--text-faint); font-size:10px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><div class="brand-mark"><span></span><span></span><span></span></div><div><div class="brand-title">解压台</div><div class="brand-sub">多通道批量解压 · UX 补丁预览</div></div></div>
+      <div class="topbar-right"><span class="preview-tag">背景自适应</span><span class="preview-tag">通道 72%</span><button class="btn btn-ghost">快捷</button><button class="btn btn-ghost">任务</button><button class="btn btn-ghost">日志</button><button class="btn btn-ghost">设置</button><button class="btn btn-primary">全部开始</button></div>
+    </header>
+    <div class="workspace-toolbar sticky"><label class="search-box"><span>⌕</span><input placeholder="搜索通道、备注或文件名" /></label><select class="toolbar-select"><option>全部分类</option></select><select class="toolbar-select"><option>全部状态</option></select><span class="toolbar-summary">显示 2/2 个通道</span><span class="shortcut-hint">工具栏位于抽屉下方，不再遮挡设置</span></div>
+    <main class="board">
+      <section class="channel" data-state="processing" style="--channel-color:#4f7cff">
+        <div class="channel-row">
+          <div class="cell-id"><div class="channel-id">CH 01</div><div class="channel-title-row"><button class="channel-name-button">multichannel-extractor</button></div><div class="channel-badges"><span class="category-pill"><i style="background:#4f7cff"></i>工作</span><span class="status-pill status-processing">解压中 · 60%</span><span class="layout-pill">直接写入</span></div></div>
+          <div class="cell-sep"></div><div class="cell-files">拖拽压缩文件到这里，或点击选择</div><div class="cell-sep"></div>
+          <div class="cell-meter"><div class="meter-demo"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="foot-stat">3/5 完成 · 60%</div></div>
+          <div class="cell-sep"></div><div class="cell-actions"><button class="btn btn-ghost btn-sm">+ 文件</button><button class="btn btn-sm">设置</button><button class="btn btn-primary btn-sm">开始</button></div>
+        </div>
+      </section>
+      <section class="channel expanded" data-state="idle" style="--channel-color:#3ea6ff">
+        <div class="channel-row">
+          <div class="cell-id"><div class="channel-id">CH 02</div><div class="channel-title-row"><button class="channel-name-button">tauri-shortcut-launcher</button></div><div class="channel-badges"><span class="category-pill"><i style="background:#3ea6ff"></i>下载</span><span class="status-pill status-idle">待开始</span><span class="layout-pill">跳过外层</span></div></div>
+          <div class="cell-sep"></div><div class="cell-files">拖拽压缩文件到这里，或点击选择</div><div class="cell-sep"></div><div class="cell-meter"><div class="meter-demo"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="foot-stat">0/0 完成 · 0%</div></div><div class="cell-sep"></div><div class="cell-actions"><button class="btn btn-ghost btn-sm">+ 文件</button><button class="btn btn-sm">设置⌃</button><button class="btn btn-primary btn-sm">开始</button></div>
+        </div>
+        <div class="channel-detail"><div class="channel-detail-inner">
+          <div class="detail-row">
+            <div class="detail-block output-block"><div class="fake-label">解压位置与输出容器</div><div class="fake-segments"><span>跟随压缩包</span><span class="active">指定目录</span></div><div class="fake-segments"><span class="active">直接写入</span><span>压缩包同名文件夹</span><span>最近目录</span></div><div class="fake-input">C:\Users\<用户>\Desktop\tauri-shortcut-launcher</div><div class="fake-note">目标路径清晰展示，相关控件保持同一视觉分组。</div></div>
+            <div class="detail-block depth-block"><div class="fake-label">解压层级</div><div class="fake-segments"><span>保留结构</span><span>展平层级</span><span class="active">跳过外层</span></div><div class="fake-note">示例输出<br/>C:\目标目录\资料\图片\示例文件.txt<br/>随选择实时更新。</div></div>
+            <div class="detail-block category-block"><div class="fake-label">分类与标识</div><div class="category-list"><span>分类 <b>下载⌄</b></span><span>标识颜色 <b>■ 蓝色</b></span><span>通道备注 <b>临时收件</b></span></div><div class="layer-caption">三张卡片等高对齐，不再出现第四列空白。</div></div>
+          </div>
+          <div class="advanced-toggle-row"><button class="advanced-toggle">⚙ 更多设置 <span>重名策略、垃圾过滤、空目录、密码与排序</span></button></div>
+          <div class="preview-footer"><span>项目辅助工具与预设操作会自动换行</span><span>恢复默认　复制通道　应用到全部　清空队列</span></div>
+        </div></div>
+      </section>
+    </main>
+    <footer class="statusbar"><div class="statusbar-left"><span class="statusbar-item"><span class="dot"></span>2 个通道</span><span class="statusbar-item">5 个文件</span><span class="statusbar-item success-text">3 个完成</span></div><span>静态效果预览</span></footer>
+  </div>
+</div>
+</body>
+</html>

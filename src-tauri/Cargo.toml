@@ -1,0 +1,32 @@
+[package]
+name = "multichannel-extractor"
+version = "2.0.0"
+description = "Multi-channel archive extraction desktop app"
+authors = ["JieYaTai Contributors"]
+edition = "2021"
+
+[lib]
+name = "multichannel_extractor_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+thiserror = "2"
+zip = "8.6.0"
+tar = "0.4"
+flate2 = "1"
+bzip2 = "0.6"
+xz2 = "0.1"
+sevenz-rust = { version = "0.6.1", features = ["aes256"] }
+tempfile = "3"
+walkdir = "2"
+fs2 = "0.4"

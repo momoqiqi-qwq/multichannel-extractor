@@ -1,0 +1,39 @@
+解压台 0.8.5 验证记录
+
+版本一致性：
+- package.json = 0.8.5
+- src-tauri/tauri.conf.json = 0.8.5
+- src-tauri/Cargo.toml = 0.8.5
+- src/config/version.ts APP_VERSION = 0.8.5
+- CONFIG_SCHEMA_VERSION 保持 v9，新增字段使用默认值向后兼容
+
+已通过：
+- npm run check:085
+- npm run check:config
+- npm run check:layout
+- npm run check:081
+- npm run check:082
+- npm run check:083
+- npm run check:084
+- npm run check:start-flow
+- 变更 TS / Vue script setup 语法检查
+- 设置搜索索引目标覆盖检查：65 个索引项，0 个缺失目标
+- SettingsDrawer.vue 行数检查：82 行，低于项目 120 行限制
+
+功能核对：
+- [x] 版本号提升到 0.8.5
+- [x] 新增 8 个工作区入口显示开关
+- [x] 新增“全部显示 / 精简显示”快捷方案
+- [x] 设置搜索支持中文名称
+- [x] 设置搜索支持拼音首字母/缩写和英文关键词
+- [x] 点击结果切换到对应设置分类
+- [x] 自动滚动到对应控件位置
+- [x] 自动聚焦并短暂高亮目标控件
+- [x] Enter 可直达首个结果
+- [x] 紧凑侧栏仍可使用搜索
+- [x] 恢复默认外观会恢复新增入口显示开关
+
+当前执行环境限制：
+- 上传包未包含 node_modules；npm install 在当前执行环境两次超时，离线缓存又缺少 @tauri-apps/api，因此无法完成 vue-tsc + Vite 的完整生产构建。
+- 当前执行环境未安装 cargo，因此无法执行 cargo fmt / cargo check / cargo test。
+- 上述限制属于验证环境缺少依赖/工具链，不是已观察到的代码编译错误；已用项目静态检查与 TypeScript 语法检查补充验证。

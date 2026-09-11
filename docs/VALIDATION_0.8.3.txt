@@ -1,0 +1,25 @@
+解压台 0.8.3 验证记录
+
+通过：
+- npm run check:config
+- npm run check:layout
+- npm run check:081
+- npm run check:082
+- npm run check:083
+- TypeScript 编译器 API 解析全部 src/**/*.ts、Vue script setup 和 vite.config.ts
+- JSON 配置与版本一致性检查
+- 源码 ZIP 完整性检查（打包后执行）
+
+重点确认：
+- 通道项目工具不再调用目录选择器。
+- 指定目录模式直接使用 channel.destination。
+- 跟随压缩包模式使用队列中压缩包的父目录。
+- 文件级 Claude 启动仍使用成功任务的实际 outputPath。
+- Claude CLI 探测支持 PATH、npm 全局前缀、npm 全局模块根目录、官方包 bin 和 Windows 原生包。
+- CLI 状态返回来源与实际可执行文件路径。
+- npm 探测逻辑已拆分到 src-tauri/src/claude_cli.rs。
+
+未执行：
+- vue-tsc 与 Vite 正式构建：npm install 在当前环境超时，依赖未安装。
+- cargo fmt / cargo check / cargo test：当前环境未提供 Rust/Cargo。
+- Windows 实机启动：当前环境不是 Windows，无法验证 cmd.exe 新控制台与本机 npm 全局目录。

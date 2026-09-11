@@ -1,0 +1,20 @@
+解压台 0.8.1 验证记录
+====================
+
+通过：
+- scripts/check-config.mjs
+- scripts/check-layout.mjs
+- scripts/check-081.mjs
+- 22 个 Vue 组件脚本结构检查
+- 42 个 TypeScript 文件及 Vue 脚本块语法转译检查
+- 15 个 Rust 文件词法与分隔符结构检查
+- 版本一致性：package.json / tauri.conf.json / Cargo.toml / src/config/version.ts = 0.8.1
+- 配置架构：v9
+- 每通道 autoStartEnabled 的默认、迁移、预设、持久化、应用到全部与 UI 覆盖
+- Claude DAT 的生成、复用、固定工作目录、固定命令、前后端命令注册与日志返回覆盖
+- Claude 通道按钮在没有历史成功目录时仍可点击并进入目录选择流程
+
+环境限制：
+- npm 依赖安装在当前环境中超时，因此没有运行 vue-tsc 和 Vite 完整构建。
+- 当前环境没有 cargo/rustc，因此没有运行 cargo fmt、cargo check、cargo test 和 Tauri 构建。
+- 当前环境不是安装了 Claude CLI 的 Windows 桌面，因此没有执行真实新控制台启动冒烟测试。

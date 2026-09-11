@@ -1,0 +1,28 @@
+jieyatai-2 validation
+====================
+
+PASS - package name: jieyatai-2
+PASS - technical version: 2.0.0 in package.json / Tauri / Cargo / frontend version config
+PASS - config schema: v10
+PASS - v9 workspace/preset storage remains in legacy migration list
+PASS - check-config.mjs
+PASS - check-layout.mjs
+PASS - check-start-flow.mjs
+PASS - check-085-ux.mjs
+PASS - check-jieyatai-1-ux2.mjs regression
+PASS - check-jieyatai-2.mjs
+PASS - 0.8.1 ~ 0.8.5 historical regression scripts after current-version assertion update
+PASS - TypeScript syntax transpile for 58 TS/Vue sources
+PASS - focused TypeScript strict check for workspaceHistory.ts + channelWorkspaceActions.ts
+PASS - channels.ts remains below 1250-line project guard
+PASS - settings search index contains 90 concrete settings/actions
+
+NOT COMPLETED - full Vue/Vite build
+Reason: source package does not include node_modules. `npm install --ignore-scripts --no-audit --no-fund --prefer-offline` was attempted and timed out after 120 seconds in this environment.
+
+NOT COMPLETED - Rust cargo check/test
+Reason: cargo is not installed in the current execution environment.
+
+The Windows helper scripts remain available for a machine with normal npm access:
+- start-web-preview.cmd
+- start-tauri-dev.cmd
