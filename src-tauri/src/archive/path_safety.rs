@@ -43,6 +43,8 @@ fn check_not_symlink(path: &Path) -> Result<(), ArchiveError> {
             path.display()
         ))),
         Ok(_) => Ok(()),
+        // 路径尚不存在时不可能是符号链接；解压目录会在写入阶段按需创建。
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(ArchiveError::Io(error)),
     }
 }
