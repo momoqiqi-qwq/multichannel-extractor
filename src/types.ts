@@ -263,6 +263,8 @@ export interface Channel {
   expanded: boolean;
   advancedOpen: boolean;
   dragActive: boolean;
+  /** 该通道的关键词扫描历史（最近 N 条），用于历史抽屉与重新加入队列。 */
+  scanHistory: ScanHistoryEntry[];
 }
 
 
@@ -297,6 +299,20 @@ export interface ArchiveDirectoryScanResult {
   selectionReason: string;
   scannedFiles: number;
   matchedFiles: number;
+}
+
+/** 一次关键词扫描的历史记录（按通道保存，可重新加入队列）。 */
+export interface ScanHistoryEntry {
+  id: string;
+  scannedAt: string;
+  directory: string;
+  keywords: string[];
+  scannedFiles: number;
+  matchedFiles: number;
+  selectedName?: string;
+  selectedPath?: string;
+  selectionReason: string;
+  candidates: ArchiveDirectoryCandidate[];
 }
 
 export type ProjectStatus = 'active' | 'paused' | 'archived';

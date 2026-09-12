@@ -1044,13 +1044,23 @@ export const useChannelStore = defineStore('channels', () => {
     pushToast,
   });
 
-  const { scanLatestAndStartChannel, startChannel, startAll, startFailed } = createChannelStartActions({
+  const {
+    scanLatestAndStartChannel,
+    startChannel,
+    startAll,
+    startFailed,
+    clearChannelScanHistory,
+    removeScanHistoryEntry,
+    rescanFromHistory,
+    requeueFromHistory,
+  } = createChannelStartActions({
     channels,
     appSettings,
     hasRunnableFiles,
     canScanLatest,
     scanChannelInbox,
     runChannels,
+    addPathsToChannel,
     pushToast,
     noteAction: history.note,
   });
@@ -1188,6 +1198,10 @@ export const useChannelStore = defineStore('channels', () => {
     rerunChannel,
     startAll,
     startFailed,
+    clearChannelScanHistory,
+    removeScanHistoryEntry,
+    rescanFromHistory,
+    requeueFromHistory,
     pauseFile,
     resumeFile,
     pauseChannel,

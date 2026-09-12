@@ -100,6 +100,7 @@ export const SETTINGS_SEARCH_INDEX: SettingSearchItem[] = [
   { id: 'default-inbox', tab: 'inbox', label: '默认收件目录', description: '关键词扫描默认目录', aliases: ['mrsjml', 'sjml', 'inbox'] },
   { id: 'match-mode', tab: 'inbox', label: '默认匹配方式', description: '匹配全部或任一关键词', aliases: ['mrppfs', 'ppfs', 'match'] },
   { id: 'scan-on-launch', tab: 'inbox', label: '启动时自动扫描', description: '启动后扫描已配置收件通道', aliases: ['qd', 'qdszdsm', 'zdsm', 'scan'] },
+  { id: 'scan-history', tab: 'inbox', label: '通道扫描历史', description: '通道卡片上的「历史」按钮，可查看并把之前扫描到的版本重新加入队列', aliases: ['tdsmls', 'smls', 'tdls', 'smzs', 'scanhistory', 'history'] },
   { id: 'scan-auto-add', tab: 'inbox', label: '扫描后自动加入推荐文件', description: '扫描结果自动进入队列', aliases: ['smhzdjrtjwj', 'zdjr', 'autoadd'] },
   { id: 'replace-queue', tab: 'inbox', label: '扫描结果替换待处理队列', description: '用扫描结果替换未运行队列', aliases: ['smjgtxdcldl', 'thdl', 'replace'] },
 

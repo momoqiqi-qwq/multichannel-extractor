@@ -26,6 +26,19 @@ for (const marker of ['ExtractionHistoryDrawer', 'openExtractionHistory', 'histo
   assert(app.includes(marker), `解压历史入口缺少：${marker}`);
 }
 
+const channelCard = read('src/components/ChannelCard.vue');
+for (const marker of ['ScanHistoryPopover', 'showScanHistory']) {
+  assert(channelCard.includes(marker), `通道扫描历史入口缺少：${marker}`);
+}
+const scanHistory = read('src/components/ScanHistoryPopover.vue');
+for (const marker of ['扫描历史', '加入队列', '重新扫描', 'requeueFromHistory', 'rescanFromHistory', 'removeScanHistoryEntry', 'clearChannelScanHistory']) {
+  assert(scanHistory.includes(marker), `扫描历史弹层缺少：${marker}`);
+}
+const scanHistoryState = read('src/domain/state.ts');
+for (const marker of ['normalizeScanHistory', 'scanHistory: normalizeScanHistory', 'scanHistory: channel.scanHistory']) {
+  assert(scanHistoryState.includes(marker), `扫描历史持久化缺少：${marker}`);
+}
+
 const extractionHistory = read('src/components/ExtractionHistoryDrawer.vue');
 for (const marker of ['recentExtractions', 'extractionHistoryLimit', '打开目录', '重新运行']) {
   assert(extractionHistory.includes(marker), `解压历史抽屉缺少：${marker}`);
@@ -66,7 +79,7 @@ for (const marker of ['workspaceWidth', 'showBrandSubtitle', 'showColumnHeaders'
 }
 
 const search = read('src/config/settingsSearch.ts');
-for (const marker of ['全局命令开关', '最近操作开关', '撤销开关', '工作区宽度', '预设重命名', '预设复制', '预设排序']) {
+for (const marker of ['全局命令开关', '最近操作开关', '撤销开关', '工作区宽度', '预设重命名', '预设复制', '预设排序', '通道扫描历史']) {
   assert(search.includes(marker), `设置搜索未覆盖：${marker}`);
 }
 const searchIndexBlock = search.split('export const SETTINGS_SEARCH_INDEX: SettingSearchItem[] = [')[1]?.split('];')[0] ?? '';
@@ -77,4 +90,4 @@ const channelLines = read('src/stores/channels.ts').split(/\r?\n/).length;
 assert(channelLines <= 1250, `channels.ts 超过 1250 行：${channelLines}`);
 assert(read('src/stores/channelWorkspaceActions.ts').split(/\r?\n/).length <= 120, 'channelWorkspaceActions.ts 过大');
 
-console.log(`jieyatai-2 专项检查通过：命令面板、最近操作/撤销、通道自动化、预设重命名/复制/排序、布局自定义与 v9→v10 兼容迁移均已覆盖；设置索引 ${searchCount} 项。`);
+console.log(`jieyatai-2 专项检查通过：命令面板、最近操作/撤销、通道自动化、预设重命名/复制/排序、布局自定义、通道扫描历史与 v9→v10 兼容迁移均已覆盖；设置索引 ${searchCount} 项。`);

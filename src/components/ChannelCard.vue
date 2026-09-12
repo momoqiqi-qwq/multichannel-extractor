@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue';
 import ChannelFileQueue from './ChannelFileQueue.vue';
+import ScanHistoryPopover from './ScanHistoryPopover.vue';
 import ChannelOutputSettings from './ChannelOutputSettings.vue';
 import ChannelDepthSettings from './ChannelDepthSettings.vue';
 import ChannelInboxSettings from './ChannelInboxSettings.vue';
@@ -30,6 +31,8 @@ const category = computed(() => categoryDefinition(props.channel.category));
 const manualOrderEnabled = computed(() => store.appSettings.channelSort === 'manual');
 const destinationReady = computed(() => props.channel.useArchiveDirectory || Boolean(props.channel.destination.trim()));
 const canScanLatest = computed(() => store.canScanLatest(props.channel));
+/** 通道开启关键词扫描，或已经留下过扫描记录时才展示「历史」按钮。 */
+const showScanHistory = computed(() => canScanLatest.value || props.channel.scanHistory.length > 0);
 const canAutoScanLatest = computed(() => store.appSettings.scanLatestOnEmptyStart && canScanLatest.value);
 const isScanningInbox = computed(() => store.inboxScanningIds.includes(props.channel.id));
 
@@ -239,6 +242,7 @@ function handleNativeDrop(event: DragEvent): void {
         <button v-else class="btn btn-primary btn-sm" type="button" :disabled="isScanningInbox || (runnableCount === 0 && !canAutoScanLatest) || !destinationReady" :title="runnableCount === 0 && canAutoScanLatest ? '队列为空时自动扫描关键词收件目录，选择最新版并开始' : (runnableCount === 0 && canScanLatest ? '空队列自动扫描已关闭，可在总设置开启' : '开始当前待处理任务')" @click="store.startChannel(channel.id)">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l14 8-14 8V4z" /></svg>{{ isScanningInbox ? '扫描中…' : (runnableCount === 0 && canAutoScanLatest ? '扫描最新版并开始' : '开始') }}
         </button>
+        <ScanHistoryPopover v-if="showScanHistory" :channel="channel" />
       </div>
     </div>
 

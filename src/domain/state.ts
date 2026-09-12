@@ -10,6 +10,7 @@ import type {
   BackgroundPositionMode,
   CollisionPolicy,
   ConfigurationBundle,
+  ScanHistoryEntry,
   DensityMode,
   DepthModeType,
   DuplicateImportPolicy,
@@ -134,6 +135,43 @@ function boundedInteger(value: unknown, fallback: number, min: number, max: numb
 function boundedNumber(value: unknown, fallback: number, min: number, max: number): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? Math.max(min, Math.min(max, parsed)) : fallback;
+}
+
+/** 归一化扫描历史：过滤无效条目、限制长度，保证可安全序列化。 */
+function normalizeScanHistory(value: unknown): ScanHistoryEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map((item) => {
+      const candidates = Array.isArray(item.candidates)
+        ? item.candidates
+            .filter((c): c is Record<string, unknown> => !!c && typeof c === 'object' && typeof c.path === 'string')
+            .map((c) => ({
+              path: String(c.path),
+              name: String(c.name ?? c.path),
+              size: Number(c.size) || 0,
+              format: String(c.format ?? ''),
+              versionLabel: typeof c.versionLabel === 'string' ? c.versionLabel : undefined,
+              versionParts: Array.isArray(c.versionParts) ? c.versionParts.map((n) => Number(n) || 0) : [],
+              modifiedUnix: Number(c.modifiedUnix) || 0,
+              matchedKeywords: Array.isArray(c.matchedKeywords) ? c.matchedKeywords.map(String) : [],
+              prerelease: Boolean(c.prerelease),
+            }))
+        : [];
+      return {
+        id: String(item.id ?? createId('scan')),
+        scannedAt: String(item.scannedAt ?? new Date().toISOString()),
+        directory: String(item.directory ?? ''),
+        keywords: Array.isArray(item.keywords) ? item.keywords.map(String) : [],
+        scannedFiles: Number(item.scannedFiles) || 0,
+        matchedFiles: Number(item.matchedFiles) || 0,
+        selectedName: typeof item.selectedName === 'string' ? item.selectedName : undefined,
+        selectedPath: typeof item.selectedPath === 'string' ? item.selectedPath : undefined,
+        selectionReason: String(item.selectionReason ?? ''),
+        candidates,
+      };
+    })
+    .slice(-30);
 }
 
 function normalizeFontWeight(value: unknown): number {
@@ -270,6 +308,7 @@ export function normalizeChannel(raw: Partial<PersistedChannel>, index: number, 
     expanded: raw.expanded ?? settings.autoExpandNewChannel,
     advancedOpen: raw.advancedOpen ?? false,
     dragActive: false,
+    scanHistory: normalizeScanHistory(raw.scanHistory),
   };
 }
 
@@ -309,6 +348,7 @@ export function defaultChannel(index: number, settings: AppSettings, category = 
     expanded: settings.autoExpandNewChannel,
     advancedOpen: false,
     dragActive: false,
+    scanHistory: [],
   };
 }
 
@@ -446,6 +486,7 @@ export function toPersistedChannel(channel: Channel): PersistedChannel {
     autoLaunchClaudeAfterExtract: channel.autoLaunchClaudeAfterExtract,
     expanded: channel.expanded,
     advancedOpen: channel.advancedOpen,
+    scanHistory: channel.scanHistory,
   };
 }
 

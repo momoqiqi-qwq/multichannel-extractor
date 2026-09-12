@@ -1,5 +1,15 @@
 import type { Ref } from 'vue';
-import type { AppSettings, ArchiveDirectoryScanResult, Channel, FileStatus, ToastMessage } from '../types';
+import type { AddPathsToChannelOptions } from './channelImportActions';
+import type {
+  AppSettings,
+  ArchiveDirectoryScanResult,
+  Channel,
+  FileStatus,
+  ScanHistoryEntry,
+  ToastMessage,
+} from '../types';
+
+const SCAN_HISTORY_LIMIT = 30;
 
 type PushToast = (toast: Omit<ToastMessage, 'id'>) => void;
 type RunChannels = (
@@ -21,11 +31,30 @@ interface ChannelStartDependencies {
   canScanLatest: (channel: Channel) => boolean;
   scanChannelInbox: ScanChannelInbox;
   runChannels: RunChannels;
+  addPathsToChannel: (channelId: string, paths: string[], options?: AddPathsToChannelOptions) => Promise<void>;
   pushToast: PushToast;
   noteAction?: (label: string) => void;
 }
 
 export function createChannelStartActions(deps: ChannelStartDependencies) {
+  function recordScanHistory(channel: Channel, result: ArchiveDirectoryScanResult): void {
+    if (!result.selectedPath) return;
+    const entry: ScanHistoryEntry = {
+      id: `scan-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+      scannedAt: new Date().toISOString(),
+      directory: result.directory,
+      keywords: [...result.keywords],
+      scannedFiles: result.scannedFiles,
+      matchedFiles: result.matchedFiles,
+      selectedName: result.selectedName,
+      selectedPath: result.selectedPath,
+      selectionReason: result.selectionReason,
+      candidates: result.candidates.map((c) => ({ ...c })),
+    };
+    const next = [...channel.scanHistory, entry];
+    channel.scanHistory = next.length > SCAN_HISTORY_LIMIT ? next.slice(-SCAN_HISTORY_LIMIT) : next;
+  }
+
   async function scanLatestAndStartChannel(
     channelId: string,
     showSearchingToast = true,
@@ -47,6 +76,7 @@ export function createChannelStartActions(deps: ChannelStartDependencies) {
       }
       return false;
     }
+    recordScanHistory(channel, result);
     if (!startAfterScan) return true;
     return deps.runChannels([channel], ['pending', 'error', 'cancelled'], true, '扫描最新版后自动开始');
   }
@@ -123,5 +153,45 @@ export function createChannelStartActions(deps: ChannelStartDependencies) {
     await deps.runChannels(deps.channels.value, ['error']);
   }
 
-  return { scanLatestAndStartChannel, startChannel, startAll, startFailed };
+  function clearChannelScanHistory(channelId: string): void {
+    const channel = deps.channels.value.find((item) => item.id === channelId);
+    if (!channel) return;
+    channel.scanHistory = [];
+  }
+
+  function removeScanHistoryEntry(channelId: string, entryId: string): void {
+    const channel = deps.channels.value.find((item) => item.id === channelId);
+    if (!channel) return;
+    channel.scanHistory = channel.scanHistory.filter((entry) => entry.id !== entryId);
+  }
+
+  /** 重新扫描当前关键词收件目录（用通道当前配置），会追加一条新历史。 */
+  async function rescanFromHistory(channelId: string): Promise<boolean> {
+    return scanLatestAndStartChannel(channelId, true, true);
+  }
+
+  /** 把某条历史记录里选中的压缩包重新加入队列并立即开始。 */
+  async function requeueFromHistory(channelId: string, entryId: string): Promise<boolean> {
+    const channel = deps.channels.value.find((item) => item.id === channelId);
+    if (!channel) return false;
+    const entry = channel.scanHistory.find((item) => item.id === entryId);
+    if (!entry?.selectedPath) {
+      deps.pushToast({ level: 'info', title: '该条历史没有可加入的文件', message: '请改用「重新扫描」查找最新版。' });
+      return false;
+    }
+    deps.noteAction?.(`重新加入：${entry.selectedName || entry.selectedPath}`);
+    await deps.addPathsToChannel(channel.id, [entry.selectedPath], { allowAutoStart: false });
+    return deps.runChannels([channel], ['pending', 'error', 'cancelled'], true, '从扫描历史重新加入');
+  }
+
+  return {
+    scanLatestAndStartChannel,
+    startChannel,
+    startAll,
+    startFailed,
+    clearChannelScanHistory,
+    removeScanHistoryEntry,
+    rescanFromHistory,
+    requeueFromHistory,
+  };
 }
