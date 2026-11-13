@@ -11,8 +11,8 @@
 <details open>
 <summary><b>目录</b></summary>
 
-- [jieyatai-2 重点](#jieyatai2-重点)
-- [jieyatai-1 重点](#jieyatai1-重点)
+- [jieyatai-2 重点](#jieyatai-2-重点)
+- [jieyatai-1 重点](#jieyatai-1-重点)
 - [0.8.5 重点](#085-重点)
 - [0.8.3 重点](#083-重点)
 - [核心功能](#核心功能)
@@ -24,9 +24,11 @@
 - [配置迁移与隐私](#配置迁移与隐私)
 - [目录结构](#目录结构)
 - [后续规划](#后续规划)
-- [jieyatai-1 UX2（本次优化）](#jieyatai1-ux2本次优化)
+- [jieyatai-1 UX2（本次优化）](#jieyatai-1-ux2本次优化)
 
 </details>
+
+---
 
 ---
 
