@@ -8,7 +8,7 @@
 
 </div>
 
-<details>
+<details open>
 <summary><b>目录</b></summary>
 
 - [jieyatai-2 重点](#jieyatai2-重点)
@@ -27,6 +27,8 @@
 - [jieyatai-1 UX2（本次优化）](#jieyatai1-ux2本次优化)
 
 </details>
+
+---
 
 ---
 
