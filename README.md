@@ -1,3 +1,35 @@
+<div align="center">
+
+<img src="./assets/readme-hero.svg" alt="multichannel-extractor" width="1000" />
+
+**基于 Tauri 2 + Rust + Vue 3 的多通道批量解压与任务中心桌面应用**
+
+[![stars](https://img.shields.io/github/stars/momoqiqi-qwq/multichannel-extractor?style=for-the-badge&color=f5c518&labelColor=2b2b2b)](https://github.com/momoqiqi-qwq/multichannel-extractor/stargazers) ![license](https://img.shields.io/github/license/momoqiqi-qwq/multichannel-extractor?style=for-the-badge&color=3da639) ![Vue 3](https://img.shields.io/badge/Vue%203-41B883?style=for-the-badge&logo=vuedotjs&logoColor=white) ![Tauri 2](https://img.shields.io/badge/Tauri%202-24C8DB?style=for-the-badge&logo=tauri&logoColor=white)
+
+</div>
+
+<details>
+<summary><b>目录</b></summary>
+
+- [jieyatai-2 重点](#jieyatai2-重点)
+- [jieyatai-1 重点](#jieyatai1-重点)
+- [0.8.5 重点](#085-重点)
+- [0.8.3 重点](#083-重点)
+- [核心功能](#核心功能)
+- [关键词收件示例](#关键词收件示例)
+- [层级与输出规则](#层级与输出规则)
+- [支持格式](#支持格式)
+- [环境要求与运行](#环境要求与运行)
+- [检查与构建](#检查与构建)
+- [配置迁移与隐私](#配置迁移与隐私)
+- [目录结构](#目录结构)
+- [后续规划](#后续规划)
+- [jieyatai-1 UX2（本次优化）](#jieyatai1-ux2本次优化)
+
+</details>
+
+---
+
 # 解压台：多通道项目解压与任务中心
 
 基于 **Tauri 2 + Rust + Vue 3 + Pinia** 的桌面批量解压应用。每个通道拥有独立文件队列、输出目录、层级规则、重名策略、关键词收件规则、分类、密码与项目辅助工具；全局调度器负责并发、优先级、暂停、恢复、预检查和任务历史。
