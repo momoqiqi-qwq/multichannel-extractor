@@ -1,12 +1,14 @@
 <div align="center">
 
-<img src="./assets/readme-hero.svg" alt="multichannel-extractor" width="1000" />
+<img src="./assets/hero.svg" alt="multichannel-extractor" width="1000" />
 
 **基于 Tauri 2 + Rust + Vue 3 的多通道批量解压与任务中心桌面应用**
 
 [![stars](https://img.shields.io/github/stars/momoqiqi-qwq/multichannel-extractor?style=for-the-badge&color=f5c518&labelColor=2b2b2b)](https://github.com/momoqiqi-qwq/multichannel-extractor/stargazers) ![license](https://img.shields.io/github/license/momoqiqi-qwq/multichannel-extractor?style=for-the-badge&color=3da639) ![Vue 3](https://img.shields.io/badge/Vue%203-41B883?style=for-the-badge&logo=vuedotjs&logoColor=white) ![Tauri 2](https://img.shields.io/badge/Tauri%202-24C8DB?style=for-the-badge&logo=tauri&logoColor=white)
 
 </div>
+
+---
 
 <details open>
 <summary><b>目录</b></summary>
